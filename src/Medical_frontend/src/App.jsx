@@ -1,30 +1,25 @@
-import { useState } from 'react';
-import { Medical_backend } from 'declarations/Medical_backend';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Sidebar from './views/doctor/components/sidebar';
+import Header from './views/doctor/components/header';
+import Dashboard from './views/doctor/dashboard/dashboard';
+import Patients from './views/doctor/patients/patients';
 
 function App() {
-  const [greeting, setGreeting] = useState('');
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    const name = event.target.elements.name.value;
-    Medical_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
-  }
-
   return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
+    <BrowserRouter>
+      <div className="flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Header />
+          <div className="flex-1 p-6">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/patients" element={<Patients />} />
+            </Routes>
+          </div>
+        </div>
+      </div>
+    </BrowserRouter>
   );
 }
 
