@@ -1,4 +1,4 @@
-function Dashboard () {
+function Adashboard () {
     return(
         <>
         <h1>Welcome </h1>
@@ -6,4 +6,4 @@ function Dashboard () {
     );
 }
 
-export default Dashboard
+export default Adashboard
