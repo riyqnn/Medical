@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Shield, Users, BarChart3, Clock, CheckCircle, ArrowRight, Menu, X, Phone, Mail, MapPin } from 'lucide-react';
 import Navigation from '../components/nav';
+import Logo from '/logo.png';
+import LogoWhite from '/logo-white.png';
 
 // Hero Section Component
 const HeroSection = () => {
@@ -170,7 +172,7 @@ const BenefitsSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-4xl font-bold mb-6">
-              Why Choose WellNest?
+              Why Choose Medly?
             </h2>
             <p className="text-xl opacity-90 mb-8">
               Join hundreds of hospitals that have transformed their operations and improved patient care with our platform.
@@ -243,7 +245,7 @@ const ContactSection = () => {
           <ContactCard 
             icon={<Mail className="w-12 h-12" />}
             title="Email Us"
-            info="hello@wellnest.com"
+            info="hello@medly.com"
           />
           <ContactCard 
             icon={<MapPin className="w-12 h-12" />}
@@ -263,11 +265,8 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold">WellNest</span>
+            <div className="flex items-center space-x-2 mb-4 w-20">
+              <img src={LogoWhite} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
               Streamlining hospital administration with cutting-edge technology and unparalleled support.
@@ -296,7 +295,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 WellNest. All rights reserved.</p>
+          <p>&copy; 2025 Medly. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -6,6 +6,7 @@ import {
   PlusCircleIcon,
 } from '@heroicons/react/24/outline'
 import { NavLink } from 'react-router-dom'
+import Logo from '/logo.png';
 
 const Sidebar = () => {
 
@@ -18,10 +19,7 @@ const Sidebar = () => {
     <div className="w-56 bg-gray-50 border-r border-gray-200 flex flex-col min-h-screen">
       {/* Logo */}
       <div className="flex items-center px-3 py-6">
-        <div className="w-8 h-8 bg-gradient-to-br bg-[#A2F2EF] rounded-lg flex items-center justify-center mr-2">
-          <span className="text-white font-bold text-lg">+</span>
-        </div>
-        <span className="text-xl font-semibold text-gray-800">WellNest</span>
+        <img src={Logo} alt="Logo" className="w-30 h-full object-contain" />
       </div>
 
       {/* Navigation Menu */}
