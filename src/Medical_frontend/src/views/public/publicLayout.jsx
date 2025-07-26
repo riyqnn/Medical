@@ -9,6 +9,7 @@ const PublicLayout = () => {
     actor: null,
     isLoading: true,
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // ✅ Tambahkan ini
 
   // Initialize authentication on mount
   useEffect(() => {
@@ -65,9 +66,9 @@ const PublicLayout = () => {
   return (
     <>
       <Navbar
-        isScrolled={false} // Adjust as needed
-        mobileMenuOpen={false} // Adjust as needed
-        setMobileMenuOpen={() => {}} // Adjust as needed
+        isScrolled={false} // optional: bisa pakai scroll detection
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen} 
         isConnected={!!authState.principal}
         principal={authState.principal}
         isLoading={authState.isLoading}

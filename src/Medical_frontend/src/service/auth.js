@@ -3,8 +3,9 @@ import { HttpAgent, Actor } from '@dfinity/agent';
 import { idlFactory } from 'declarations/Medical_backend'; // Adjust path to your generated IDL
 
 // Canister IDs from dfx deploy
-const INTERNET_IDENTITY_CANISTER_ID = 'be2us-64aaa-aaaaa-qaabq-cai';
-const MEDICAL_BACKEND_CANISTER_ID = 'bkyz2-fmaaa-aaaaa-qaaaq-cai';
+const MEDICAL_BACKEND_CANISTER_ID = process.env.CANISTER_ID_MEDICAL_BACKEND;
+const INTERNET_IDENTITY_CANISTER_ID = process.env.CANISTER_ID_INTERNET_IDENTITY;
+
 
 // Determine if running locally or on mainnet
 const isLocal = process.env.NODE_ENV === 'development';

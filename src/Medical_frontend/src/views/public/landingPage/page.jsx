@@ -336,12 +336,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <Navigation 
-        isScrolled={isScrolled} 
-        mobileMenuOpen={mobileMenuOpen} 
-        setMobileMenuOpen={setMobileMenuOpen} 
-        icons={{Shield,Menu}}
-      />
       <HeroSection />
       <StatsSection animateStats={animateStats} />
       <FeaturesSection />
