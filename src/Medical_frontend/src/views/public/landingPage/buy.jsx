@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, ShieldExclamationIcon, CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
 const Buy = () => {
-  const { principal, actor } = useOutletContext(); // Get principal and actor from Outlet context
+  const {
+    actor,
+    principal,
+    isConnected,
+    userRole,
+    roleLoading,
+    refreshUserRole,
+    formatPrincipal
+  } = useOutletContext();
+  
   const [formData, setFormData] = useState({
     hospitalName: '',
     logoURL: '',
@@ -14,6 +23,35 @@ const Buy = () => {
   const [registrationResult, setRegistrationResult] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreviewURL, setLogoPreviewURL] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
+
+  // Pricing plans (frontend only)
+  const pricingPlans = [
+    {
+      id: 'monthly',
+      name: 'Monthly Plan',
+      price: '100 ICP',
+      duration: '1 Month',
+      features: ['Hospital Registration', 'Basic Features', 'Monthly Billing'],
+      popular: false
+    },
+    {
+      id: 'yearly',
+      name: 'Yearly Plan',
+      price: '500 ICP',
+      duration: '12 Months',
+      features: ['Hospital Registration', 'All Features', 'Annual Billing', 'Save 58%'],
+      popular: true
+    },
+    {
+      id: 'lifetime',
+      name: 'Lifetime Plan',
+      price: '1,000 ICP',
+      duration: 'Lifetime',
+      features: ['Hospital Registration', 'All Features', 'One-time Payment', 'Best Value'],
+      popular: false
+    }
+  ];
 
   // Handle logo file changes
   useEffect(() => {
@@ -22,7 +60,6 @@ const Buy = () => {
       setLogoPreviewURL(url);
       setFormData((prev) => ({ ...prev, logoURL: url }));
 
-      // Cleanup URL object to prevent memory leaks
       return () => {
         URL.revokeObjectURL(url);
       };
@@ -51,10 +88,7 @@ const Buy = () => {
     if (file && file.type.startsWith('image/')) {
       setLogoFile(file);
       if (errors.logoURL) {
-        setErrors((prev) => ({
-          ...prev,
-          logoURL: '',
-        }));
+        setErrors((prev) => ({ ...prev, logoURL: '' }));
       }
     }
   };
@@ -66,10 +100,7 @@ const Buy = () => {
         const file = item.getAsFile();
         setLogoFile(file);
         if (errors.logoURL) {
-          setErrors((prev) => ({
-            ...prev,
-            logoURL: '',
-          }));
+          setErrors((prev) => ({ ...prev, logoURL: '' }));
         }
         break;
       }
@@ -81,10 +112,7 @@ const Buy = () => {
     if (file && file.type.startsWith('image/')) {
       setLogoFile(file);
       if (errors.logoURL) {
-        setErrors((prev) => ({
-          ...prev,
-          logoURL: '',
-        }));
+        setErrors((prev) => ({ ...prev, logoURL: '' }));
       }
     }
   };
@@ -92,10 +120,10 @@ const Buy = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.hospitalName.trim()) {
-      newErrors.hospitalName = 'Nama rumah sakit wajib diisi';
+      newErrors.hospitalName = 'Hospital name is required';
     }
     if (!logoFile && !formData.logoURL) {
-      newErrors.logoURL = 'Logo wajib diisi';
+      newErrors.logoURL = 'Hospital logo is required';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -119,21 +147,28 @@ const Buy = () => {
     setErrors({});
 
     try {
+      // Simulate payment processing (frontend only)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const result = await actor.registerHospital(
         formData.hospitalName.trim(),
         formData.logoURL || logoPreviewURL
       );
       console.log('Registration result:', result);
-      setRegistrationResult(result);
+      
+      // Refresh user role setelah registrasi berhasil
+      await refreshUserRole();
+      
+      setRegistrationResult(`Hospital "${formData.hospitalName}" has been successfully registered with ${pricingPlans.find(p => p.id === selectedPlan)?.name}!`);
       setSubmitSuccess(true);
     } catch (error) {
       console.error('Registration failed:', error);
-      let errorMessage = 'Pendaftaran gagal. Silakan coba lagi.';
+      let errorMessage = 'Registration failed. Please try again.';
       if (error.message) {
         if (error.message.includes('rejected')) {
-          errorMessage = 'Transaksi ditolak. Pastikan Anda memiliki akses yang diperlukan.';
+          errorMessage = 'Transaction rejected. Please ensure you have the necessary access.';
         } else if (error.message.includes('network')) {
-          errorMessage = 'Koneksi jaringan bermasalah. Silakan coba lagi.';
+          errorMessage = 'Network connection issue. Please try again.';
         } else {
           errorMessage = `Error: ${error.message}`;
         }
@@ -151,21 +186,55 @@ const Buy = () => {
     setErrors({});
     setSubmitSuccess(false);
     setRegistrationResult('');
+    setSelectedPlan('monthly');
   };
 
-  // Show connection requirement if no principal or actor
-  if (!principal || !actor) {
+  // Show loading while checking user role
+  if (roleLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          <BuildingOfficeIcon className="w-16 h-16 text-[#A2F2EF] mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Wallet Connection Required</h2>
-          <p className="text-gray-600 mb-6">
-            Please connect your Internet Identity wallet to register a hospital.
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2F2EF] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied for doctors
+  if (isConnected && userRole === 'doctor') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-red-200 p-8 text-center">
+          <ShieldExclamationIcon className="w-20 h-20 text-red-500 mx-auto mb-6" />
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h2>
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Sorry, doctors are not allowed to register hospitals. Only hospital administrators can access this feature.
           </p>
           <button
             onClick={() => window.history.back()}
-            className="bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 px-6 py-2 rounded-lg font-medium transition-colors"
+            className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show connection requirement if not connected
+  if (!isConnected || !principal || !actor) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-[#F0FFFE] flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+          <BuildingOfficeIcon className="w-20 h-20 text-[#A2F2EF] mx-auto mb-6" />
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Connect Your Wallet</h2>
+          <p className="text-gray-600 mb-8 leading-relaxed">
+            Please connect your Internet Identity wallet to register a hospital on the blockchain.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] hover:from-[#8EEAE7] hover:to-[#7AE7E4] text-gray-900 px-8 py-3 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg"
           >
             Go Back
           </button>
@@ -175,143 +244,244 @@ const Buy = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Register Hospital</h1>
-            <p className="text-gray-600 mt-1">Register a new hospital to the Internet Computer blockchain</p>
-            {principal && (
-              <p className="text-sm text-[#A2F2EF] mt-1">
-                Connected as: {`${principal.slice(0, 6)}...${principal.slice(-4)}`}
-              </p>
-            )}
-          </div>
-        </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-[#F0FFFE] py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {!submitSuccess ? (
-          <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Logo Section */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-64 flex items-center justify-center relative">
-                <div
-                  className="w-full h-full flex flex-col items-center justify-center cursor-pointer"
-                  onDrop={handleFileDrop}
-                  onDragOver={(e) => e.preventDefault()}
-                  onPaste={handleFilePaste}
-                  tabIndex={0}
-                >
-                  {logoPreviewURL || formData.logoURL ? (
-                    <div className="relative w-full h-full">
-                      <img
-                        src={logoPreviewURL || formData.logoURL}
-                        alt="Hospital Logo Preview"
-                        className="w-full h-full object-contain"
-                      />
-                      <button
-                        onClick={() => {
-                          setLogoFile(null);
-                          setFormData((prev) => ({ ...prev, logoURL: '' }));
-                        }}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
-                        title="Remove image"
+          <>
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Register Your Hospital</h1>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Join the decentralized healthcare network and register your hospital on the Internet Computer blockchain
+              </p>
+              {principal && (
+                <div className="mt-4 inline-flex items-center px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full">
+                  <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse mr-2"></div>
+                  <span className="text-emerald-800 font-medium">
+                    Connected: {formatPrincipal(principal)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Pricing Plans */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">Choose Your Plan</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {pricingPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className={`relative bg-white rounded-2xl shadow-lg border-2 transition-all cursor-pointer transform hover:scale-105 ${
+                      selectedPlan === plan.id
+                        ? 'border-[#A2F2EF] shadow-xl'
+                        : plan.popular
+                        ? 'border-[#A2F2EF] shadow-xl'
+                        : 'border-gray-200 hover:border-[#A2F2EF]'
+                    }`}
+                    onClick={() => setSelectedPlan(plan.id)}
+                  >
+                    {plan.popular && (
+                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-gray-900 px-4 py-1 rounded-full text-sm font-medium">
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
+                    <div className="p-8">
+                      <div className="text-center mb-6">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                        <div className="text-3xl font-bold text-[#A2F2EF] mb-1">{plan.price}</div>
+                        <p className="text-gray-500">{plan.duration}</p>
+                      </div>
+                      <ul className="space-y-3 mb-8">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-center">
+                            <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                            <span className="text-gray-600">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex items-center justify-center">
+                        <div className={`w-4 h-4 rounded-full border-2 ${
+                          selectedPlan === plan.id
+                            ? 'bg-[#A2F2EF] border-[#A2F2EF]'
+                            : 'border-gray-300'
+                        }`}>
+                          {selectedPlan === plan.id && (
+                            <CheckIcon className="w-3 h-3 text-gray-900 m-0.5" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Registration Form */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] p-6">
+                <h2 className="text-2xl font-bold text-gray-900">Hospital Registration</h2>
+                <p className="text-gray-700 mt-1">Complete the form below to register your hospital</p>
+              </div>
+              
+              <div className="p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  {/* Logo Upload Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Hospital Logo</h3>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 h-80 flex items-center justify-center relative hover:border-[#A2F2EF] transition-colors">
+                      <div
+                        className="w-full h-full flex flex-col items-center justify-center cursor-pointer"
+                        onDrop={handleFileDrop}
+                        onDragOver={(e) => e.preventDefault()}
+                        onPaste={handleFilePaste}
+                        tabIndex={0}
                       >
-                        ×
+                        {logoPreviewURL || formData.logoURL ? (
+                          <div className="relative w-full h-full">
+                            <img
+                              src={logoPreviewURL || formData.logoURL}
+                              alt="Hospital Logo Preview"
+                              className="w-full h-full object-contain rounded-lg"
+                            />
+                            <button
+                              onClick={() => {
+                                setLogoFile(null);
+                                setFormData((prev) => ({ ...prev, logoURL: '' }));
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg hover:bg-red-600 shadow-lg"
+                              title="Remove image"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <BuildingOfficeIcon className="w-16 h-16 text-[#A2F2EF] mx-auto mb-4" />
+                            <p className="text-gray-600 text-lg mb-2">Drag & Drop your logo here</p>
+                            <p className="text-gray-500 mb-4">or paste from clipboard</p>
+                            <label className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-gray-900 rounded-lg font-medium cursor-pointer hover:from-[#8EEAE7] hover:to-[#7AE7E4] transition-all transform hover:scale-105">
+                              <CurrencyDollarIcon className="w-5 h-5 mr-2" />
+                              Choose File
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileUpload}
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {errors.logoURL && (
+                      <p className="text-red-500 text-sm mt-2 flex items-center">
+                        <ShieldExclamationIcon className="w-4 h-4 mr-1" />
+                        {errors.logoURL}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="space-y-8">
+                    <h3 className="text-lg font-semibold text-gray-900">Hospital Information</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Hospital Name *
+                        <span className="text-xs text-blue-600 ml-2">(stored on blockchain)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="hospitalName"
+                        value={formData.hospitalName}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-all ${
+                          errors.hospitalName ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="e.g., General Medical Center"
+                        maxLength={100}
+                      />
+                      {errors.hospitalName && (
+                        <p className="mt-2 text-sm text-red-600 flex items-center">
+                          <ShieldExclamationIcon className="w-4 h-4 mr-1" />
+                          {errors.hospitalName}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Selected Plan Display */}
+                    <div className="bg-gradient-to-r from-[#A2F2EF]/10 to-[#8EEAE7]/10 rounded-xl p-6 border border-[#A2F2EF]/20">
+                      <h4 className="font-medium text-gray-900 mb-2">Selected Plan</h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-semibold text-[#A2F2EF]">
+                          {pricingPlans.find(p => p.id === selectedPlan)?.name}
+                        </span>
+                        <span className="text-xl font-bold text-gray-900">
+                          {pricingPlans.find(p => p.id === selectedPlan)?.price}
+                        </span>
+                      </div>
+                    </div>
+
+                    {errors.submit && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                        <p className="text-red-800 font-medium flex items-center">
+                          <ShieldExclamationIcon className="w-5 h-5 mr-2" />
+                          {errors.submit}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-4 pt-6">
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-all"
+                      >
+                        Reset Form
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || !actor || !principal}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] hover:from-[#8EEAE7] hover:to-[#7AE7E4] text-gray-900 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg flex items-center justify-center"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
+                            Processing Payment...
+                          </>
+                        ) : (
+                          `Register Hospital (${pricingPlans.find(p => p.id === selectedPlan)?.price})`
+                        )}
                       </button>
                     </div>
-                  ) : (
-                    <>
-                      <BuildingOfficeIcon className="w-12 h-12 text-[#A2F2EF] mb-2" />
-                      <p className="text-gray-600 text-center">Drag & Drop or Paste Image</p>
-                      <p className="text-sm text-gray-500">or</p>
-                      <label className="text-[#A2F2EF] hover:text-[#8EEAE7] text-sm font-medium cursor-pointer">
-                        Upload File
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                        />
-                      </label>
-                    </>
-                  )}
-                </div>
-                {errors.logoURL && <p className="text-red-500 text-sm mt-2 absolute -bottom-6">{errors.logoURL}</p>}
-              </div>
-
-              {/* Form Section */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Hospital Details</h2>
-                <p className="text-gray-600">Enter the required information to register your hospital</p>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hospital Name * <span className="text-xs text-blue-600">(will be stored on blockchain)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="hospitalName"
-                    value={formData.hospitalName}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent ${
-                      errors.hospitalName ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="RS. Contoh Medical Center"
-                    maxLength={100}
-                  />
-                  {errors.hospitalName && <p className="mt-1 text-sm text-red-600">{errors.hospitalName}</p>}
-                </div>
-
-                {errors.submit && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-red-800 font-medium">{errors.submit}</p>
                   </div>
-                )}
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || !actor || !principal}
-                    className="px-6 py-2 bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
-                        Registering...
-                      </>
-                    ) : (
-                      'Register Hospital'
-                    )}
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         ) : (
-          <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center py-12">
-            <BuildingOfficeIcon className="w-16 h-16 text-[#A2F2EF] mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Registration Successful!</h2>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">{registrationResult}</p>
+          /* Success State */
+          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-12 text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] rounded-full flex items-center justify-center mx-auto mb-8">
+              <CheckIcon className="w-12 h-12 text-gray-900" />
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">Registration Successful!</h2>
+            <p className="text-gray-600 mb-8 text-lg leading-relaxed">{registrationResult}</p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={handleReset}
-                className="bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 px-6 py-2 rounded-lg font-medium transition-colors"
+                className="bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] hover:from-[#8EEAE7] hover:to-[#7AE7E4] text-gray-900 px-8 py-3 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg"
               >
                 Register Another Hospital
               </button>
               <button
                 onClick={() => window.history.back()}
-                className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                className="border border-gray-300 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-50 font-medium transition-all"
               >
-                Go Back
+                Go Back to Dashboard
               </button>
             </div>
           </div>
