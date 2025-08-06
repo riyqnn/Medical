@@ -14,7 +14,7 @@ import { NavLink } from 'react-router-dom'
 
 const Sidebar = () => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/' },
+    { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/doctor' },
     { id: 'patients', label: 'Patients', icon: UsersIcon, to: '/doctor/patients' },
     { id: 'Medical Records', label: 'Medical Records', icon: UserCircleIcon, to: '/doctor/medicalrecord' },
     { id: 'departments', label: 'Departments', icon: BuildingOfficeIcon, to: '/departments' },
