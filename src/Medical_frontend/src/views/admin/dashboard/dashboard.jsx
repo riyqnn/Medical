@@ -227,25 +227,23 @@ const Adashboard = () => {
     }
   };
 
-  // Hospital Logo component - always use registered logo URL
+  // Hospital Logo component
   const HospitalLogo = ({ logoURL, hospitalName, size = 'default' }) => {
     const [imageError, setImageError] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
     
-    // Size variants
     const sizeClasses = {
-      small: 'w-8 h-8',
-      default: 'w-12 h-12',
+      small: 'w-10 h-10',
+      default: 'w-14 h-14',
       large: 'w-16 h-16'
     };
 
     const iconSizes = {
-      small: 'w-4 h-4',
-      default: 'w-6 h-6',
+      small: 'w-5 h-5',
+      default: 'w-7 h-7',
       large: 'w-8 h-8'
     };
 
-    // Reset states when logoURL changes
     useEffect(() => {
       if (logoURL) {
         setImageError(false);
@@ -253,34 +251,29 @@ const Adashboard = () => {
       }
     }, [logoURL]);
 
-    // Only show fallback icon if no logoURL provided or image failed to load
     if (!logoURL || imageError) {
       return (
-        <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm`}>
-          <Building2 className={`${iconSizes[size]} text-white`} />
+        <div className={`${sizeClasses[size]} bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-2xl flex items-center justify-center shadow-lg`}>
+          <Building2 className={`${iconSizes[size]} text-slate-700`} />
         </div>
       );
     }
 
     return (
-      <div className={`${sizeClasses[size]} rounded-lg overflow-hidden shadow-sm bg-white border border-gray-100 relative`}>
-        {/* Loading placeholder */}
+      <div className={`${sizeClasses[size]} rounded-2xl overflow-hidden shadow-lg bg-white border-2 border-white relative`}>
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse flex items-center justify-center">
             <Building2 className={`${iconSizes[size]} text-gray-400`} />
           </div>
         )}
-        {/* Actual logo image */}
         <img
           src={logoURL}
           alt={`${hospitalName} logo`}
-          className={`w-full h-full object-contain transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`w-full h-full object-contain transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           onError={() => {
-            console.log(`Failed to load logo for ${hospitalName}: ${logoURL}`);
             setImageError(true);
           }}
           onLoad={() => {
-            console.log(`Successfully loaded logo for ${hospitalName}: ${logoURL}`);
             setImageLoaded(true);
           }}
           style={{ backgroundColor: 'white' }}
@@ -292,16 +285,16 @@ const Adashboard = () => {
   // No authenticated user
   if (!principal) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center bg-white rounded-xl p-8 shadow-sm border border-gray-200">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="text-center bg-white/70 backdrop-blur-lg rounded-3xl p-10 shadow-2xl border border-white/20">
+          <div className="w-20 h-20 bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Building2 className="w-10 h-10 text-slate-700" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Please Login</h2>
-          <p className="text-gray-600 mb-4">You need to login with Internet Identity to access the medical dashboard.</p>
+          <h2 className="text-3xl font-bold text-slate-800 mb-3">Welcome Back</h2>
+          <p className="text-slate-600 mb-6 leading-relaxed">Please login with Internet Identity to access your medical dashboard</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
           >
             Refresh Page
           </button>
@@ -313,14 +306,14 @@ const Adashboard = () => {
   // Actor not available
   if (!actor) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center bg-white rounded-xl p-8 shadow-sm border border-gray-200">
-          <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">System Loading</h2>
-          <p className="text-gray-600 mb-4">Please wait while we connect to the blockchain...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="text-center bg-white/70 backdrop-blur-lg rounded-3xl p-10 shadow-2xl border border-white/20">
+          <RefreshCw className="w-20 h-20 text-slate-500 mx-auto mb-6 animate-spin" />
+          <h2 className="text-3xl font-bold text-slate-800 mb-3">System Loading</h2>
+          <p className="text-slate-600 mb-6 leading-relaxed">Connecting to the blockchain network...</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
           >
             Refresh Page
           </button>
@@ -331,22 +324,28 @@ const Adashboard = () => {
 
   // Hospitals List View
   const HospitalsView = () => (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Medical Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Select a hospital to access your dashboard</p>
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-xs text-gray-500">
-              Connected as: <span className="font-medium">{principal?.slice(0, 8)}...{principal?.slice(-6)}</span>
-            </span>
+        <div className="mb-10">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-slate-800 mb-2">Medical Dashboard</h1>
+            <p className="text-slate-600 text-lg">Select a hospital to access your dashboard</p>
+          </div>
+          
+          <div className="flex items-center justify-between bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
             <div className="flex items-center space-x-3">
-              <span className="text-xs text-gray-500">Last update: {lastUpdate.toLocaleTimeString()}</span>
+              <div className="w-3 h-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] rounded-full"></div>
+              <span className="text-sm text-slate-600">
+                Connected: <span className="font-semibold text-slate-800">{principal?.slice(0, 8)}...{principal?.slice(-6)}</span>
+              </span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-slate-500">Updated: {lastUpdate.toLocaleTimeString()}</span>
               <button
                 onClick={refreshData}
                 disabled={loading}
-                className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 transition-all duration-300"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -357,24 +356,24 @@ const Adashboard = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 bg-red-100 border border-red-200 rounded-md p-4">
+          <div className="mb-8 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6">
             <div className="flex items-center">
-              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-              <span className="text-red-700 text-sm">{error}</span>
+              <AlertCircle className="w-6 h-6 text-red-500 mr-3" />
+              <span className="text-red-700 font-medium">{error}</span>
             </div>
           </div>
         )}
 
         {/* Loading State */}
         {loading && hospitals.length === 0 && (
-          <div className="text-center py-12">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-4" />
-            <p className="text-gray-600">Loading hospitals...</p>
+          <div className="text-center py-20">
+            <RefreshCw className="w-12 h-12 animate-spin mx-auto text-[#A2F2EF] mb-6" />
+            <p className="text-slate-600 text-lg">Loading hospitals...</p>
           </div>
         )}
 
         {/* Hospitals Grid */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {hospitals.filter(hospital => hospital.isActive).map((hospital) => {
             const hasAccess = checkHospitalAccess(hospital);
             const hospitalDoctors = doctors.filter(d => Number(d.hospitalId) === Number(hospital.id));
@@ -383,45 +382,51 @@ const Adashboard = () => {
             return (
               <div
                 key={Number(hospital.id)}
-                className={`bg-white rounded-xl p-6 border-2 transition-all duration-200 ${
+                className={`bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/30 transition-all duration-300 ${
                   hasAccess 
-                    ? 'border-transparent hover:border-blue-200 cursor-pointer hover:shadow-lg hover:-translate-y-1' 
-                    : 'border-gray-100 opacity-60 cursor-not-allowed'
+                    ? 'hover:bg-white/80 hover:shadow-2xl cursor-pointer hover:-translate-y-2 hover:border-[#A2F2EF]/30' 
+                    : 'opacity-60 cursor-not-allowed'
                 }`}
                 onClick={() => hasAccess && handleHospitalSelect(hospital)}
               >
-                <div className="flex items-start space-x-4">
-                  <HospitalLogo logoURL={hospital.logoURL} hospitalName={hospital.name} size="default" />
+                <div className="flex items-start space-x-6 mb-6">
+                  <HospitalLogo logoURL={hospital.logoURL} hospitalName={hospital.name} />
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate mb-1">{hospital.name}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
-                      <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-1" />
-                        <span>{hospitalDoctors.length} doctors</span>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 truncate">{hospital.name}</h3>
+                    <div className="flex items-center space-x-6 text-slate-600 mb-3">
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-5 h-5" />
+                        <span className="font-semibold">{hospitalDoctors.length}</span>
+                        <span className="text-sm">doctors</span>
                       </div>
-                      <div className="flex items-center">
-                        <Activity className="w-4 h-4 mr-1" />
-                        <span>{activeDoctors.length} active</span>
+                      <div className="flex items-center space-x-2">
+                        <Activity className="w-5 h-5 text-green-500" />
+                        <span className="font-semibold">{activeDoctors.length}</span>
+                        <span className="text-sm">active</span>
                       </div>
-                    </div>
-                    <div className="text-xs text-gray-400 mb-3 truncate">
-                      Wallet: {hospital.walletAddress?.toText ? 
-                        hospital.walletAddress.toText().slice(0, 8) + '...' + hospital.walletAddress.toText().slice(-6) :
-                        hospital.walletAddress?.toString().slice(0, 8) + '...' + hospital.walletAddress?.toString().slice(-6)
-                      }
                     </div>
                   </div>
-                  {hasAccess && <ChevronRight className="w-5 h-5 text-gray-400 mt-1" />}
+                  {hasAccess && <ChevronRight className="w-6 h-6 text-slate-400" />}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
+                
+                <div className="space-y-3">
+                  <div className="text-sm text-slate-500 bg-slate-100/50 rounded-xl p-3 truncate">
+                    <span className="font-medium">Wallet:</span> {hospital.walletAddress?.toText ? 
+                      hospital.walletAddress.toText().slice(0, 12) + '...' + hospital.walletAddress.toText().slice(-8) :
+                      hospital.walletAddress?.toString().slice(0, 12) + '...' + hospital.walletAddress?.toString().slice(-8)
+                    }
+                  </div>
+                  
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${hasAccess ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <span className="text-sm font-medium text-gray-600">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${hasAccess ? 'bg-green-400' : 'bg-red-400'}`} />
+                      <span className={`text-sm font-semibold ${hasAccess ? 'text-green-600' : 'text-red-600'}`}>
                         {hasAccess ? 'Access Granted' : 'Access Denied'}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">ID: {Number(hospital.id)}</span>
+                    <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-lg font-mono">
+                      #{Number(hospital.id)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -431,15 +436,15 @@ const Adashboard = () => {
 
         {/* Empty State */}
         {!loading && hospitals.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Building2 className="w-8 h-8 text-white" />
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+              <Building2 className="w-12 h-12 text-slate-700" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Hospitals Found</h3>
-            <p className="text-gray-600 mb-4">No hospitals are currently registered in the system.</p>
+            <h3 className="text-2xl font-bold text-slate-800 mb-4">No Hospitals Available</h3>
+            <p className="text-slate-600 mb-8 text-lg">No hospitals are currently registered in the system</p>
             <button
               onClick={refreshData}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             >
               Try Again
             </button>
@@ -450,31 +455,33 @@ const Adashboard = () => {
   );
 
   // Hospital Dashboard View
-const DashboardView = () => (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  const DashboardView = () => (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between mb-8 bg-white/50 backdrop-blur-sm rounded-3xl p-6 border border-white/20">
+          <div className="flex items-center space-x-6">
             <button
               onClick={() => setCurrentView('hospitals')}
-              className="flex items-center space-x-2 text-gray-500 hover:text-gray-800 transition-colors"
+              className="flex items-center space-x-2 text-slate-600 hover:text-slate-800 transition-colors bg-white/60 rounded-2xl px-4 py-2"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back to Hospitals</span>
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back to Hospitals</span>
             </button>
-            <HospitalLogo logoURL={selectedHospital?.logoURL} hospitalName={selectedHospital?.name} size="default" />
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{selectedHospital?.name}</h1>
-              <p className="text-xs text-gray-500">Hospital Dashboard</p>
+            <div className="flex items-center space-x-4">
+              <HospitalLogo logoURL={selectedHospital?.logoURL} hospitalName={selectedHospital?.name} />
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">{selectedHospital?.name}</h1>
+                <p className="text-slate-600">Hospital Dashboard</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-xs text-gray-500">Last update: {lastUpdate.toLocaleTimeString()}</span>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-slate-500">Updated: {lastUpdate.toLocaleTimeString()}</span>
             <button
               onClick={refreshData}
               disabled={loading}
-              className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 transition-all duration-300"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
@@ -484,122 +491,132 @@ const DashboardView = () => (
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 bg-red-100 border border-red-200 rounded-md p-4">
+          <div className="mb-8 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6">
             <div className="flex items-center">
-              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-              <span className="text-red-700 text-sm">{error}</span>
+              <AlertCircle className="w-6 h-6 text-red-500 mr-3" />
+              <span className="text-red-700 font-medium">{error}</span>
             </div>
           </div>
         )}
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 border border-transparent hover:border-gray-200 shadow-sm transition">
-            <div className="flex justify-between items-center text-gray-500 text-xs font-medium">
-              <span>Total Doctors</span>
-              <span className="cursor-pointer">⋯</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-white/30 hover:bg-white/80 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-blue-100 p-3 rounded-2xl">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+              <span className="text-2xl">⋯</span>
             </div>
-            <div className="mt-2 font-bold text-2xl text-gray-900">
+            <div className="text-3xl font-bold text-slate-800 mb-2">
               {selectedHospital?.stats?.totalDoctors || 0}
             </div>
-            <div className="mt-1 text-xs text-gray-500">All registered</div>
-            <div className="mt-2 inline-flex items-center text-blue-600 text-xs font-semibold rounded-md bg-blue-100 px-2 py-0.5">
-              <Users className="w-3 h-3 mr-1" />
-              <span>Doctors</span>
-            </div>
+            <div className="text-slate-600 font-medium mb-3">Total Doctors</div>
+            <div className="text-sm text-slate-500">All registered physicians</div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-transparent hover:border-gray-200 shadow-sm transition">
-            <div className="flex justify-between items-center text-gray-500 text-xs font-medium">
-              <span>Active Doctors</span>
-              <span className="cursor-pointer">⋯</span>
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-white/30 hover:bg-white/80 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-green-100 p-3 rounded-2xl">
+                <Activity className="w-6 h-6 text-green-600" />
+              </div>
+              <span className="text-2xl">⋯</span>
             </div>
-            <div className="mt-2 font-bold text-2xl text-gray-900">
+            <div className="text-3xl font-bold text-slate-800 mb-2">
               {selectedHospital?.stats?.activeDoctors || 0}
             </div>
-            <div className="mt-1 text-xs text-gray-500">Currently available</div>
-            <div className="mt-2 inline-flex items-center text-green-600 text-xs font-semibold rounded-md bg-green-100 px-2 py-0.5">
-              <Activity className="w-3 h-3 mr-1" />
-              <span>Active</span>
-            </div>
+            <div className="text-slate-600 font-medium mb-3">Active Doctors</div>
+            <div className="text-sm text-slate-500">Currently available</div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-transparent hover:border-gray-200 shadow-sm transition">
-            <div className="flex justify-between items-center text-gray-500 text-xs font-medium">
-              <span>Total Patients</span>
-              <span className="cursor-pointer">⋯</span>
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-white/30 hover:bg-white/80 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-purple-100 p-3 rounded-2xl">
+                <FileText className="w-6 h-6 text-purple-600" />
+              </div>
+              <span className="text-2xl">⋯</span>
             </div>
-            <div className="mt-2 font-bold text-2xl text-gray-900">
+            <div className="text-3xl font-bold text-slate-800 mb-2">
               {selectedHospital?.stats?.totalPatients || 0}
             </div>
-            <div className="mt-1 text-xs text-gray-500">All records</div>
-            <div className="mt-2 inline-flex items-center text-purple-600 text-xs font-semibold rounded-md bg-purple-100 px-2 py-0.5">
-              <FileText className="w-3 h-3 mr-1" />
-              <span>Patients</span>
-            </div>
+            <div className="text-slate-600 font-medium mb-3">Total Patients</div>
+            <div className="text-sm text-slate-500">All medical records</div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-transparent hover:border-gray-200 shadow-sm transition">
-            <div className="flex justify-between items-center text-gray-500 text-xs font-medium">
-              <span>Today's Capacity</span>
-              <span className="cursor-pointer">⋯</span>
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-white/30 hover:bg-white/80 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-orange-100 p-3 rounded-2xl">
+                <Calendar className="w-6 h-6 text-orange-600" />
+              </div>
+              <span className="text-2xl">⋯</span>
             </div>
-            <div className="mt-2 font-bold text-2xl text-gray-900">
+            <div className="text-3xl font-bold text-slate-800 mb-2">
               {selectedHospital?.stats?.todayAppointments || 0}
             </div>
-            <div className="mt-1 text-xs text-gray-500">Estimated slots</div>
-            <div className="mt-2 inline-flex items-center text-orange-600 text-xs font-semibold rounded-md bg-orange-100 px-2 py-0.5">
-              <Calendar className="w-3 h-3 mr-1" />
-              <span>Appointments</span>
-            </div>
+            <div className="text-slate-600 font-medium mb-3">Today's Capacity</div>
+            <div className="text-sm text-slate-500">Estimated appointments</div>
           </div>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Section - Medical Records */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl p-5 border border-transparent hover:border-gray-200 shadow-sm transition">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold text-gray-800">Recent Medical Records</h3>
-                <button className="text-xs text-blue-600 hover:text-blue-800">View All</button>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Medical Records Section */}
+          <div className="xl:col-span-2">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/30">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-slate-800">Recent Medical Records</h3>
+                <button className="text-[#A2F2EF] hover:text-[#8EEAE7] font-semibold transition-colors">
+                  View All →
+                </button>
               </div>
+              
               {loading && (
-                <div className="text-center py-8">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
-                  <p className="text-gray-600 text-sm">Loading medical records...</p>
+                <div className="text-center py-16">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#A2F2EF] mb-4" />
+                  <p className="text-slate-600">Loading medical records...</p>
                 </div>
               )}
+              
               {!loading && medicalRecords.length === 0 && (
-                <div className="text-center py-8">
-                  <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600 text-sm">No medical records found</p>
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-slate-700" />
+                  </div>
+                  <p className="text-slate-600">No medical records found</p>
                 </div>
               )}
-              <div className="space-y-3">
+              
+              <div className="space-y-4">
                 {medicalRecords.map((record) => {
                   const doctor = doctors.find(d => Number(d.id) === Number(record.doctorId));
                   return (
                     <div
                       key={Number(record.id)}
-                      className="flex items-center justify-between bg-gray-50 rounded-md p-3 hover:bg-gray-100 transition"
+                      className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/70 hover:shadow-lg transition-all duration-300"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-semibold">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-2xl flex items-center justify-center shadow-lg">
+                          <span className="text-slate-700 font-bold text-lg">
                             {Number(record.patientId).toString().slice(-2).padStart(2, '0')}
                           </span>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">Patient ID: {Number(record.patientId)}</p>
-                          <p className="text-xs text-gray-500">
-                            {doctor?.name || 'Unknown Doctor'} • {record.diagnosis}
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-bold text-slate-800">Patient #{Number(record.patientId)}</h4>
+                            <button className="text-slate-400 hover:text-slate-600 transition-colors">
+                              <FileText className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <p className="text-slate-600 font-medium mb-1">
+                            Dr. {doctor?.name || 'Unknown'} • {record.diagnosis}
                           </p>
-                          <p className="text-xs text-gray-400">
-                            {record.prescriptions.length} prescriptions • {formatTime(record.createdAt)}
-                          </p>
+                          <div className="flex items-center space-x-4 text-sm text-slate-500">
+                            <span>{record.prescriptions.length} prescriptions</span>
+                            <span>•</span>
+                            <span>{formatTime(record.createdAt)}</span>
+                          </div>
                         </div>
                       </div>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <FileText className="w-5 h-5" />
-                      </button>
                     </div>
                   );
                 })}
@@ -607,45 +624,106 @@ const DashboardView = () => (
             </div>
           </div>
 
-          {/* Right Section - Doctors */}
+          {/* Doctors Section */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl p-5 border border-transparent hover:border-gray-200 shadow-sm transition">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold text-gray-800">Doctors</h3>
-                <span className="text-gray-400 text-xs cursor-pointer">⋯</span>
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/30">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-slate-800">Hospital Staff</h3>
+                <span className="text-slate-400 text-2xl cursor-pointer">⋯</span>
               </div>
-              <div className="space-y-3">
+              
+              <div className="space-y-6">
                 {doctors
                   .filter(d => Number(d.hospitalId) === Number(selectedHospital?.id))
+                  .slice(0, 6)
                   .map((doctor) => (
-                    <div key={Number(doctor.id)} className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                        {doctor.photoURL ? (
-                          <img
-                            src={doctor.photoURL}
-                            alt={doctor.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <span className="text-gray-600 text-sm" style={{display: doctor.photoURL ? 'none' : 'block'}}>
-                          {doctor.name?.charAt(0)}
-                        </span>
+                    <div key={Number(doctor.id)} className="flex items-center space-x-4 bg-white/40 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/60 transition-all duration-300">
+                      <div className="relative">
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shadow-lg">
+                          {doctor.photoURL ? (
+                            <img
+                              src={doctor.photoURL}
+                              alt={doctor.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <span className="text-slate-600 text-xl font-bold" style={{display: doctor.photoURL ? 'none' : 'flex'}}>
+                            {doctor.name?.charAt(0)}
+                          </span>
+                        </div>
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
+                          doctor.isActive ? 'bg-green-400' : 'bg-red-400'
+                        }`} />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-800">{doctor.name}</p>
-                        <p className="text-xs text-gray-400">{doctor.specialty || 'General Practice'}</p>
-                      </div>
-                      <div className={`text-xs font-semibold rounded-md px-2 py-0.5 ${
-                        doctor.isActive ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-                      }`}>
-                        {doctor.isActive ? 'Available' : 'Unavailable'}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-800 truncate">{doctor.name}</h4>
+                        <p className="text-slate-600 text-sm truncate">{doctor.specialty || 'General Practice'}</p>
+                        <div className="flex items-center mt-2">
+                          <span className={`text-xs font-semibold px-3 py-1 rounded-xl ${
+                            doctor.isActive 
+                              ? 'text-green-700 bg-green-100' 
+                              : 'text-red-700 bg-red-100'
+                          }`}>
+                            {doctor.isActive ? 'Available' : 'Unavailable'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
+              </div>
+              
+              {doctors.filter(d => Number(d.hospitalId) === Number(selectedHospital?.id)).length > 6 && (
+                <div className="mt-6 text-center">
+                  <button className="text-[#A2F2EF] hover:text-[#8EEAE7] font-semibold transition-colors">
+                    View All Doctors →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/30">
+              <h3 className="text-xl font-bold text-slate-800 mb-6">Quick Overview</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="font-medium text-slate-700">Doctors</span>
+                  </div>
+                  <span className="text-2xl font-bold text-slate-800">
+                    {doctors.filter(d => Number(d.hospitalId) === Number(selectedHospital?.id)).length}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-green-600" />
+                    </div>
+                    <span className="font-medium text-slate-700">Active Now</span>
+                  </div>
+                  <span className="text-2xl font-bold text-slate-800">
+                    {doctors.filter(d => Number(d.hospitalId) === Number(selectedHospital?.id) && d.isActive).length}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="font-medium text-slate-700">Records</span>
+                  </div>
+                  <span className="text-2xl font-bold text-slate-800">
+                    {medicalRecords.length}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -655,7 +733,7 @@ const DashboardView = () => (
   );
 
   return (
-    <div>
+    <div className="font-sans antialiased">
       {currentView === 'hospitals' ? <HospitalsView /> : <DashboardView />}
     </div>
   );
