@@ -17,8 +17,8 @@ const Sidebar = () => {
     { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/doctor' },
     { id: 'patients', label: 'Patients', icon: UsersIcon, to: '/doctor/patients' },
     { id: 'Medical Records', label: 'Medical Records', icon: UserCircleIcon, to: '/doctor/medicalrecord' },
-    { id: 'departments', label: 'Departments', icon: BuildingOfficeIcon, to: '/departments' },
-    { id: 'schedule', label: "Doctors' Schedule", icon: CalendarDaysIcon, to: '/schedule' },
+    { id: 'departments', label: 'Departments', icon: BuildingOfficeIcon, to: '/doctor/departments' },
+    { id: 'schedule', label: "Doctors' Schedule", icon: CalendarDaysIcon, to: '/doctor/schedule' },
     { id: 'inventory', label: 'Inventory', icon: CubeIcon, to: '/inventory' },
     { id: 'messages', label: 'Messages', icon: EnvelopeIcon, to: '/messages' },
   ];

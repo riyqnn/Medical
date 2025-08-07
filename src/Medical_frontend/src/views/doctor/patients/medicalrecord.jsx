@@ -10,15 +10,17 @@ import {
   PhotoIcon,
   XCircleIcon,
   MagnifyingGlassIcon,
+  ClockIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 
 const MedicalRecord = () => {
-  const { principal, actor } = useOutletContext(); // Ambil principal dan actor dari Outlet
+  const { principal, actor } = useOutletContext();
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [hospitals, setHospitals] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [userHospitals, setUserHospitals] = useState([]);
-  const [activeTab, setActiveTab] = useState('add');
+  const [activeTab, setActiveTab] = useState('view');
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [filterHospital, setFilterHospital] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +32,15 @@ const MedicalRecord = () => {
     diagnosis: '',
     cpptURL: '',
     evidenceURLs: [''],
+    prescriptions: [
+      {
+        medicationName: '',
+        dosage: '',
+        frequency: '',
+        duration: '',
+        instructions: ''
+      }
+    ],
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,8 +118,16 @@ const MedicalRecord = () => {
     setIsLoading(true);
     try {
       const records = await actor.getMedicalRecordsByPatient(parseInt(patientId));
-      setMedicalRecords(records);
-      console.log('Loaded patient records:', records);
+      const normalizedRecords = records.map(record => ({
+        ...record,
+        id: Number(record.id),
+        patientId: Number(record.patientId),
+        doctorId: Number(record.doctorId),
+        hospitalId: Number(record.hospitalId),
+        prescriptions: record.prescriptions || [],
+      }));
+      setMedicalRecords(normalizedRecords);
+      console.log('Loaded patient records:', normalizedRecords);
     } catch (error) {
       console.error('Error loading patient records:', error);
       setActorError('Failed to load patient records from blockchain.');
@@ -156,12 +175,64 @@ const MedicalRecord = () => {
     }));
   };
 
+  const handlePrescriptionChange = (index, field, value) => {
+    const newPrescriptions = [...formData.prescriptions];
+    newPrescriptions[index] = {
+      ...newPrescriptions[index],
+      [field]: value,
+    };
+    setFormData((prev) => ({
+      ...prev,
+      prescriptions: newPrescriptions,
+    }));
+  };
+
+  const addPrescription = () => {
+    setFormData((prev) => ({
+      ...prev,
+      prescriptions: [
+        ...prev.prescriptions,
+        {
+          medicationName: '',
+          dosage: '',
+          frequency: '',
+          duration: '',
+          instructions: ''
+        }
+      ],
+    }));
+  };
+
+  const removePrescription = (index) => {
+    const newPrescriptions = formData.prescriptions.filter((_, i) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      prescriptions: newPrescriptions,
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.patientId) newErrors.patientId = 'Patient ID is required';
     if (!formData.hospitalId) newErrors.hospitalId = 'Hospital selection is required';
     if (!formData.diagnosis) newErrors.diagnosis = 'Diagnosis is required';
     if (!formData.cpptURL) newErrors.cpptURL = 'CPPT Document URL is required';
+
+    // Validate prescriptions if any are filled
+    const hasAnyPrescription = formData.prescriptions.some(p => 
+      p.medicationName || p.dosage || p.frequency || p.duration || p.instructions
+    );
+    
+    if (hasAnyPrescription) {
+      formData.prescriptions.forEach((prescription, index) => {
+        if (prescription.medicationName && !prescription.dosage) {
+          newErrors[`prescription_${index}_dosage`] = 'Dosage is required when medication is specified';
+        }
+        if (prescription.medicationName && !prescription.frequency) {
+          newErrors[`prescription_${index}_frequency`] = 'Frequency is required when medication is specified';
+        }
+      });
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -177,12 +248,17 @@ const MedicalRecord = () => {
     setIsSubmitting(true);
     try {
       const validEvidenceURLs = formData.evidenceURLs.filter((url) => url.trim() !== '');
+      const validPrescriptions = formData.prescriptions.filter(p => 
+        p.medicationName && p.dosage && p.frequency
+      );
+
       const result = await actor.addMedicalRecord(
         parseInt(formData.patientId),
         parseInt(formData.hospitalId),
         formData.diagnosis,
         formData.cpptURL,
-        validEvidenceURLs
+        validEvidenceURLs,
+        validPrescriptions
       );
 
       if (result.includes('Unauthorized')) {
@@ -198,6 +274,15 @@ const MedicalRecord = () => {
         diagnosis: '',
         cpptURL: '',
         evidenceURLs: [''],
+        prescriptions: [
+          {
+            medicationName: '',
+            dosage: '',
+            frequency: '',
+            duration: '',
+            instructions: ''
+          }
+        ],
       });
 
       alert(`Medical record added successfully: ${result}`);
@@ -205,6 +290,8 @@ const MedicalRecord = () => {
       if (selectedPatientId === formData.patientId) {
         await loadPatientRecords(formData.patientId);
       }
+
+      setActiveTab('view');
     } catch (error) {
       console.error('Failed to add medical record:', error);
       setErrors({ submit: 'Failed to add medical record to blockchain. Please try again.' });
@@ -251,53 +338,18 @@ const MedicalRecord = () => {
 
   if (!principal || principal === '2vxsx-fae') {
     return (
-      <div className="p-6 text-center py-12">
-        <UserIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
-        <p className="text-gray-600 mb-8">
-          Please login via Internet Identity to access medical records.
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Login
-        </button>
-      </div>
-    );
-  }
-
-  if (!isLoading && userHospitals.length === 0 && activeTab === 'add') {
-    return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <BuildingOfficeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Hospital Access</h2>
-          <p className="text-gray-600 mb-4">
-            You are not registered as an active doctor in any hospital.
-            Please contact a hospital owner to register you as a doctor.
-          </p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-md w-full mx-4 text-center">
+          <UserIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
           <p className="text-gray-600 mb-8">
-            Available hospitals: {hospitals.length > 0 ? hospitals.map(h => h.name).join(', ') : 'None'}
+            Please login via Internet Identity to access medical records.
           </p>
-          <div className="text-sm text-gray-500 mb-6">
-            Current wallet: {principal}
-          </div>
           <button
-            onClick={() => setActiveTab('view')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            onClick={() => window.location.reload()}
+            className="w-full px-4 py-2 bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 rounded-lg font-medium transition-colors"
           >
-            Back to Medical Records
-          </button>
-          {/* Tombol debugging sementara */}
-          <button
-            onClick={async () => {
-              const doctors = await actor.getDoctors();
-              console.log('All doctors:', doctors);
-            }}
-            className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
-          >
-            Log All Doctors
+            Login
           </button>
         </div>
       </div>
@@ -306,53 +358,73 @@ const MedicalRecord = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Medical Records</h1>
-            <p className="text-gray-600 mt-1">Manage patient medical records on Internet Computer blockchain</p>
+            <h1 className="text-3xl font-bold text-gray-900">Medical Records</h1>
+            <p className="text-gray-600 mt-2">Manage patient medical records on Internet Computer blockchain</p>
           </div>
-          <div className="flex gap-4">
-            {activeTab === 'view' && (
-              <button
-                onClick={() => setActiveTab('add')}
-                className="bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors"
-              >
-                <PlusIcon className="w-5 h-5" />
-                Add Medical Record
-              </button>
-            )}
+          {activeTab === 'view' && userHospitals.length > 0 && (
             <button
-              onClick={async () => {
-                const doctors = await actor.getDoctors();
-                console.log('All doctors:', doctors);
-              }}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+              onClick={() => setActiveTab('add')}
+              className="bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm"
             >
-              Log All Doctors
+              <PlusIcon className="w-5 h-5" />
+              Add Medical Record
             </button>
-          </div>
+          )}
         </div>
 
+        {/* Error Alert */}
         {actorError && (
-          <div className="bg-red-50 border-b border-red-200 px-6 py-3 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg px-6 py-4 mb-6">
             <p className="text-red-800 font-medium">{actorError}</p>
           </div>
         )}
 
+        {/* Loading */}
         {isLoading && (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2F2EF]"></div>
             <span className="ml-3 text-gray-600">Loading medical records...</span>
           </div>
         )}
 
-        {activeTab === 'add' && !isLoading && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
+        {/* No Hospital Access */}
+        {!isLoading && userHospitals.length === 0 && activeTab === 'add' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+            <BuildingOfficeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">No Hospital Access</h2>
+            <p className="text-gray-600 mb-4">
+              You are not registered as an active doctor in any hospital.
+              Please contact a hospital owner to register you as a doctor.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 mb-2">Available hospitals:</p>
+              <p className="text-sm font-medium text-gray-900">
+                {hospitals.length > 0 ? hospitals.map(h => h.name).join(', ') : 'None'}
+              </p>
+              <div className="text-xs text-gray-500 mt-2">
+                Current wallet: {principal}
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('view')}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+            >
+              View Medical Records
+            </button>
+          </div>
+        )}
+
+        {/* Add Medical Record Form */}
+        {activeTab === 'add' && !isLoading && userHospitals.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
               <button
                 onClick={() => setActiveTab('view')}
-                className="text-[#A2F2EF] hover:text-[#8EEAE7] font-medium mb-4 flex items-center gap-2"
+                className="text-[#A2F2EF] hover:text-[#8EEAE7] font-medium mb-4 flex items-center gap-2 transition-colors"
               >
                 ← Back to Medical Records
               </button>
@@ -363,11 +435,12 @@ const MedicalRecord = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="p-6 space-y-8">
+              {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Patient ID * <span className="text-xs text-blue-600">(will be stored on blockchain)</span>
+                    Patient ID *
                   </label>
                   <div className="relative">
                     <UserIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -376,8 +449,8 @@ const MedicalRecord = () => {
                       name="patientId"
                       value={formData.patientId}
                       onChange={handleInputChange}
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent ${
-                        errors.patientId ? 'border-red-300' : 'border-gray-300'
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors ${
+                        errors.patientId ? 'border-red-300 bg-red-50' : 'border-gray-300'
                       }`}
                       placeholder="Enter patient ID"
                     />
@@ -387,14 +460,14 @@ const MedicalRecord = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hospital * <span className="text-xs text-blue-600">(only hospitals where you are registered)</span>
+                    Hospital *
                   </label>
                   <select
                     name="hospitalId"
                     value={formData.hospitalId}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent ${
-                      errors.hospitalId ? 'border-red-300' : 'border-gray-300'
+                    className={`w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors ${
+                      errors.hospitalId ? 'border-red-300 bg-red-50' : 'border-gray-300'
                     }`}
                   >
                     <option value="">Select Hospital</option>
@@ -405,114 +478,243 @@ const MedicalRecord = () => {
                     ))}
                   </select>
                   {errors.hospitalId && <p className="mt-1 text-sm text-red-600">{errors.hospitalId}</p>}
-                  <p className="text-xs text-gray-500 mt-1">
-                    You can only add records for hospitals where you are an active doctor
-                  </p>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Diagnosis * <span className="text-xs text-blue-600">(will be stored on blockchain)</span>
-                  </label>
-                  <textarea
-                    name="diagnosis"
-                    value={formData.diagnosis}
-                    onChange={handleInputChange}
-                    rows="3"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent ${
-                      errors.diagnosis ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter diagnosis details"
-                  />
-                  {errors.diagnosis && <p className="mt-1 text-sm text-red-600">{errors.diagnosis}</p>}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CPPT Document URL * <span className="text-xs text-blue-600">(will be stored on blockchain)</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="cpptURL"
-                    value={formData.cpptURL}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent ${
-                      errors.cpptURL ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="https://example.com/cppt.pdf"
-                  />
-                  {errors.cpptURL && <p className="mt-1 text-sm text-red-600">{errors.cpptURL}</p>}
                 </div>
               </div>
 
+              {/* Diagnosis */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Evidence URLs (Optional) <span className="text-xs text-blue-600">(will be stored on blockchain)</span>
+                  Diagnosis *
                 </label>
-                {formData.evidenceURLs.map((url, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="url"
-                      value={url}
-                      onChange={(e) => handleEvidenceURLChange(index, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent"
-                      placeholder="https://example.com/evidence.jpg"
-                    />
-                    {formData.evidenceURLs.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeEvidenceURL(index)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <XCircleIcon className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addEvidenceURL}
-                  className="text-[#A2F2EF] hover:text-[#8EEAE7] text-sm font-medium"
-                >
-                  + Add Another Evidence URL
-                </button>
+                <textarea
+                  name="diagnosis"
+                  value={formData.diagnosis}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors resize-none ${
+                    errors.diagnosis ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter detailed diagnosis..."
+                />
+                {errors.diagnosis && <p className="mt-1 text-sm text-red-600">{errors.diagnosis}</p>}
               </div>
 
+              {/* CPPT Document */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CPPT Document URL *
+                </label>
+                <input
+                  type="url"
+                  name="cpptURL"
+                  value={formData.cpptURL}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors ${
+                    errors.cpptURL ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="https://example.com/cppt.pdf"
+                />
+                {errors.cpptURL && <p className="mt-1 text-sm text-red-600">{errors.cpptURL}</p>}
+              </div>
+
+              {/* Evidence URLs */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Evidence URLs (Optional)
+                </label>
+                <div className="space-y-3">
+                  {formData.evidenceURLs.map((url, index) => (
+                    <div key={index} className="flex gap-3">
+                      <div className="relative flex-1">
+                        <PhotoIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="url"
+                          value={url}
+                          onChange={(e) => handleEvidenceURLChange(index, e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
+                          placeholder="https://example.com/evidence.jpg"
+                        />
+                      </div>
+                      {formData.evidenceURLs.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeEvidenceURL(index)}
+                          className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <XCircleIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addEvidenceURL}
+                    className="text-[#A2F2EF] hover:text-[#8EEAE7] text-sm font-medium transition-colors"
+                  >
+                    + Add Another Evidence URL
+                  </button>
+                </div>
+              </div>
+
+              {/* Prescriptions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Prescriptions (Optional)
+                </label>
+                <div className="space-y-4">
+                  {formData.prescriptions.map((prescription, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium text-gray-900">Prescription #{index + 1}</h4>
+                        {formData.prescriptions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removePrescription(index)}
+                            className="text-red-600 hover:bg-red-100 p-1 rounded transition-colors"
+                          >
+                            <XCircleIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Medication Name
+                          </label>
+                          <input
+                            type="text"
+                            value={prescription.medicationName}
+                            onChange={(e) => handlePrescriptionChange(index, 'medicationName', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
+                            placeholder="e.g., Paracetamol"
+                          />
+                          {errors[`prescription_${index}_medication`] && (
+                            <p className="mt-1 text-sm text-red-600">{errors[`prescription_${index}_medication`]}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Dosage
+                          </label>
+                          <input
+                            type="text"
+                            value={prescription.dosage}
+                            onChange={(e) => handlePrescriptionChange(index, 'dosage', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
+                            placeholder="e.g., 500mg"
+                          />
+                          {errors[`prescription_${index}_dosage`] && (
+                            <p className="mt-1 text-sm text-red-600">{errors[`prescription_${index}_dosage`]}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Frequency
+                          </label>
+                          <input
+                            type="text"
+                            value={prescription.frequency}
+                            onChange={(e) => handlePrescriptionChange(index, 'frequency', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
+                            placeholder="e.g., 3x sehari"
+                          />
+                          {errors[`prescription_${index}_frequency`] && (
+                            <p className="mt-1 text-sm text-red-600">{errors[`prescription_${index}_frequency`]}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Duration
+                          </label>
+                          <input
+                            type="text"
+                            value={prescription.duration}
+                            onChange={(e) => handlePrescriptionChange(index, 'duration', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
+                            placeholder="e.g., 7 hari"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Instructions
+                        </label>
+                        <textarea
+                          value={prescription.instructions}
+                          onChange={(e) => handlePrescriptionChange(index, 'instructions', e.target.value)}
+                          rows="2"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors resize-none"
+                          placeholder="e.g., Diminum setelah makan"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <button
+                    type="button"
+                    onClick={addPrescription}
+                    className="text-[#A2F2EF] hover:text-[#8EEAE7] text-sm font-medium transition-colors"
+                  >
+                    + Add Another Prescription
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Display */}
               {errors.submit && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800 font-medium">{errors.submit}</p>
                 </div>
               )}
 
-              <div className="flex gap-4 pt-4">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setFormData({
                       patientId: '',
                       hospitalId: '',
                       diagnosis: '',
                       cpptURL: '',
                       evidenceURLs: [''],
-                    })
-                  }
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                      prescriptions: [
+                        {
+                          medicationName: '',
+                          dosage: '',
+                          frequency: '',
+                          duration: '',
+                          instructions: ''
+                        }
+                      ],
+                    });
+                    setErrors({});
+                  }}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                 >
-                  Cancel
+                  Reset Form
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting || !actor}
-                  className="px-6 py-2 bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-[#A2F2EF] hover:bg-[#8EEAE7] text-gray-900 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2 inline-block"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
                       Registering to Blockchain...
                     </>
                   ) : (
-                    'Register Medical Record'
+                    <>
+                      <CheckCircleIcon className="w-5 h-5 mr-2" />
+                      Register Medical Record
+                    </>
                   )}
                 </button>
               </div>
@@ -520,10 +722,12 @@ const MedicalRecord = () => {
           </div>
         )}
 
+        {/* View Medical Records */}
         {activeTab === 'view' && !isLoading && (
-          <div className="p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="relative">
                   <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
@@ -531,13 +735,13 @@ const MedicalRecord = () => {
                     placeholder="Search by Patient ID..."
                     value={selectedPatientId}
                     onChange={(e) => handlePatientFilter(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
                   />
                 </div>
                 <select
                   value={filterHospital}
                   onChange={(e) => setFilterHospital(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
                 >
                   <option value="">All Hospitals</option>
                   {userHospitals.map((hospital) => (
@@ -546,90 +750,182 @@ const MedicalRecord = () => {
                     </option>
                   ))}
                 </select>
-                <div className="text-sm text-gray-600 flex items-center">
-                  Total: {filteredRecords.length} records
+                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+                  <span className="text-sm font-medium text-gray-700">Total Records:</span>
+                  <span className="text-lg font-bold text-[#A2F2EF]">{filteredRecords.length}</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRecords.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <DocumentTextIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {selectedPatientId
-                      ? `No medical records found for Patient ID: ${selectedPatientId}`
-                      : 'Enter a Patient ID to view medical records'}
-                  </h3>
-                  <p className="text-gray-500">Try adjusting your search or filter criteria</p>
-                </div>
-              )}
-              {filteredRecords.map((record) => (
-                <div
-                  key={Number(record.id)}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <DocumentTextIcon className="w-5 h-5 text-[#A2F2EF]" />
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Record #{Number(record.id)}</h3>
-                        <p className="text-sm text-gray-500">Patient ID: {Number(record.patientId)}</p>
+            {/* Records Grid */}
+            {filteredRecords.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {selectedPatientId
+                    ? `No medical records found for Patient ID: ${selectedPatientId}`
+                    : 'Enter a Patient ID to view medical records'}
+                </h3>
+                <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
+                {!selectedPatientId && (
+                  <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
+                    <p className="text-sm text-blue-800">
+                       <strong>Tip:</strong> Enter a patient ID in the search box above to view their medical records.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredRecords.map((record) => (
+                  <div
+                    key={Number(record.id)}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+                  >
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-[#A2F2EF]/20 to-[#A2F2EF]/10 px-6 py-4 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <DocumentTextIcon className="w-5 h-5 text-[#A2F2EF]" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">Record #{Number(record.id)}</h3>
+                            <p className="text-sm text-gray-600">Patient ID: {Number(record.patientId)}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs bg-[#A2F2EF]/20 text-gray-800 px-3 py-1 rounded-full font-medium">
+                          Blockchain
+                        </span>
                       </div>
                     </div>
-                    <span className="text-xs bg-[#A2F2EF]/20 text-gray-800 px-2 py-1 rounded-full">Blockchain</span>
-                  </div>
 
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <BuildingOfficeIcon className="w-4 h-4" />
-                      <span>{getHospitalName(record.hospitalId)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <UserIcon className="w-4 h-4" />
-                      <span>{getDoctorName(record.doctorId)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{formatDate(record.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <ClipboardDocumentIcon className="w-4 h-4" />
-                      <span>{record.diagnosis}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DocumentTextIcon className="w-4 h-4 text-[#A2F2EF]" />
-                      <a
-                        href={record.cpptURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#A2F2EF] hover:text-[#8EEAE7] underline"
-                      >
-                        View CPPT Document
-                      </a>
-                    </div>
-                    {record.evidenceURLs.length > 0 && (
-                      <div className="flex items-start gap-2">
-                        <PhotoIcon className="w-4 h-4 text-[#A2F2EF]" />
-                        <div>
-                          {record.evidenceURLs.map((url, index) => (
-                            <a
-                              key={index}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#A2F2EF] hover:text-[#8EEAE7] underline block text-sm"
-                            >
-                              Evidence {index + 1}
-                            </a>
-                          ))}
+                    {/* Content */}
+                    <div className="p-6 space-y-4">
+                      {/* Basic Info */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-sm">
+                          <BuildingOfficeIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium text-gray-900">{getHospitalName(record.hospitalId)}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-sm">
+                          <UserIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="text-gray-700">Dr. {getDoctorName(record.doctorId)}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-sm">
+                          <CalendarIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="text-gray-700">{formatDate(record.createdAt)}</span>
                         </div>
                       </div>
-                    )}
+
+                      {/* Diagnosis */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <ClipboardDocumentIcon className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">Diagnosis</p>
+                            <p className="text-sm text-gray-900 leading-relaxed">{record.diagnosis}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Prescriptions */}
+                      {record.prescriptions && record.prescriptions.length > 0 && (
+                        <div className="bg-blue-50 rounded-lg p-4">
+                          <div className="flex items-start gap-3 mb-3">
+                            <PrescriptionIcon className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+                              Prescriptions ({record.prescriptions.length})
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            {record.prescriptions.slice(0, 2).map((prescription, index) => (
+                              <div key={index} className="bg-white rounded-md p-3 border border-blue-100">
+                                <div className="flex justify-between items-start mb-1">
+                                  <h4 className="font-medium text-sm text-gray-900">{prescription.medicationName}</h4>
+                                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                                    {prescription.dosage}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-gray-600">
+                                  <span className="flex items-center gap-1">
+                                    <ClockIcon className="w-3 h-3" />
+                                    {prescription.frequency}
+                                  </span>
+                                  {prescription.duration && (
+                                    <span>{prescription.duration}</span>
+                                  )}
+                                </div>
+                                {prescription.instructions && (
+                                  <p className="text-xs text-gray-700 mt-1 italic">
+                                    {prescription.instructions}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                            {record.prescriptions.length > 2 && (
+                              <div className="text-xs text-blue-600 text-center py-1">
+                                +{record.prescriptions.length - 2} more prescriptions
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Documents */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <DocumentTextIcon className="w-4 h-4 text-[#A2F2EF]" />
+                          <a
+                            href={record.cpptURL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#A2F2EF] hover:text-[#8EEAE7] font-medium transition-colors underline decoration-dotted"
+                          >
+                            View CPPT Document
+                          </a>
+                        </div>
+                        
+                        {record.evidenceURLs && record.evidenceURLs.length > 0 && (
+                          <div className="flex items-start gap-3">
+                            <PhotoIcon className="w-4 h-4 text-[#A2F2EF] flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="text-xs font-medium text-gray-600 mb-1">Evidence Files:</p>
+                              <div className="space-y-1">
+                                {record.evidenceURLs.map((url, index) => (
+                                  <a
+                                    key={index}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-[#A2F2EF] hover:text-[#8EEAE7] transition-colors underline decoration-dotted block"
+                                  >
+                                    Evidence #{index + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Stored on IC Blockchain</span>
+                        <span className="flex items-center gap-1">
+                          <CheckCircleIcon className="w-3 h-3 text-green-500" />
+                          Verified
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

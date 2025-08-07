@@ -9,6 +9,8 @@ import AdminLayout from './views/admin/adminLayout';
 import Doctors from './views/admin/doctor/Doctors'
 import MedicalRecord from './views/doctor/patients/medicalrecord';
 import PublicLayout from './views/public/publicLayout';
+import DoctorSchedule from './views/doctor/patients/doctorschedule';
+import Department from './views/doctor/patients/department';
 
 
 function App() {
@@ -26,6 +28,8 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="patients" element={<Patients />} />
           <Route path="medicalrecord" element={<MedicalRecord />} />
+          <Route path="schedule" element={<DoctorSchedule />} />
+          <Route path="departments" element={<Department />} />
         </Route>
         
         {/* Anda bisa menambahkan route lain di sini, misal untuk login */}
