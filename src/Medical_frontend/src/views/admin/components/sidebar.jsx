@@ -19,7 +19,9 @@ const Sidebar = () => {
     <div className="w-56 bg-gray-50 border-r border-gray-200 flex flex-col min-h-screen">
       {/* Logo */}
       <div className="flex items-center px-3 py-6">
-        <img src={Logo} alt="Logo" className="w-30 h-full object-contain" />
+        <NavLink to="/" className="block">
+          <img src={Logo} alt="Logo" className="w-30 h-full object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+        </NavLink>
       </div>
 
       {/* Navigation Menu */}
