@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './views/public/landingPage/page';
 import DoctorLayout from './views/doctor/docLayout';
 import Dashboard from './views/doctor/dashboard/dashboard';
-import Patients from './views/doctor/patients/patients';
 import Buy from './views/public/landingPage/buy'
 import AdminDashboard from './views/admin/dashboard/dashboard'
 import AdminLayout from './views/admin/adminLayout';
@@ -26,7 +25,6 @@ function App() {
         {/* Grup Route untuk Dokter (semua akan punya Sidebar/Header) */}
         <Route path="/doctor" element={<DoctorLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="patients" element={<Patients />} />
           <Route path="medicalrecord" element={<MedicalRecord />} />
           <Route path="schedule" element={<DoctorSchedule />} />
           <Route path="departments" element={<Department />} />

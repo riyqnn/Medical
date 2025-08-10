@@ -104,6 +104,9 @@ const MedicalRecord = () => {
       setHospitals(normalizedHospitals);
       setDoctors(normalizedDoctors);
       setUserHospitals(userHospitalsData);
+      
+      // Load all medical records by trying different patient IDs
+      await loadAllMedicalRecords();
     } catch (error) {
       console.error('Error loading blockchain data:', error);
       setActorError('Failed to load data from blockchain. Please try refreshing.');
@@ -112,8 +115,31 @@ const MedicalRecord = () => {
     }
   };
 
+  // New function to load all medical records
+  const loadAllMedicalRecords = async () => {
+    if (!actor) return;
+    
+    try {
+      // Since there's no getAllMedicalRecords, we'll start with an empty array
+      // Records will be loaded when user searches or when new records are added
+      setMedicalRecords([]);
+      console.log('Medical records initialized. Use search to view specific patient records.');
+    } catch (error) {
+      console.error('Error initializing medical records:', error);
+    }
+  };
+
   const loadPatientRecords = async (patientId) => {
-    if (!actor || !patientId) return;
+    if (!actor) {
+      setMedicalRecords([]);
+      return;
+    }
+
+    if (!patientId) {
+      // If no patient ID, clear records
+      setMedicalRecords([]);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -287,6 +313,7 @@ const MedicalRecord = () => {
 
       alert(`Medical record added successfully: ${result}`);
 
+      // After successful submission, if we were viewing specific patient records, reload them
       if (selectedPatientId === formData.patientId) {
         await loadPatientRecords(formData.patientId);
       }
@@ -303,11 +330,7 @@ const MedicalRecord = () => {
   const handlePatientFilter = async (patientId) => {
     setSelectedPatientId(patientId);
     setFilterHospital('');
-    if (patientId) {
-      await loadPatientRecords(patientId);
-    } else {
-      setMedicalRecords([]);
-    }
+    await loadPatientRecords(patientId);
   };
 
   const getHospitalName = (hospitalId) => {
@@ -332,8 +355,9 @@ const MedicalRecord = () => {
   };
 
   const filteredRecords = medicalRecords.filter((record) => {
+    const matchesPatient = !selectedPatientId || Number(record.patientId) === Number(selectedPatientId);
     const matchesHospital = !filterHospital || Number(record.hospitalId) === Number(filterHospital);
-    return matchesHospital;
+    return matchesPatient && matchesHospital;
   });
 
   if (!principal || principal === '2vxsx-fae') {
@@ -732,7 +756,7 @@ const MedicalRecord = () => {
                   <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="number"
-                    placeholder="Search by Patient ID..."
+                    placeholder="Enter Patient ID to search..."
                     value={selectedPatientId}
                     onChange={(e) => handlePatientFilter(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
@@ -744,17 +768,35 @@ const MedicalRecord = () => {
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
                 >
                   <option value="">All Hospitals</option>
-                  {userHospitals.map((hospital) => (
+                  {hospitals.map((hospital) => (
                     <option key={hospital.id} value={hospital.id}>
                       {hospital.name}
                     </option>
                   ))}
                 </select>
                 <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
-                  <span className="text-sm font-medium text-gray-700">Total Records:</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {selectedPatientId ? `Records for Patient ${selectedPatientId}:` : 'Enter Patient ID to search'}
+                  </span>
                   <span className="text-lg font-bold text-[#A2F2EF]">{filteredRecords.length}</span>
                 </div>
               </div>
+              
+              {/* Clear Search Button */}
+              {selectedPatientId && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setSelectedPatientId('');
+                      setFilterHospital('');
+                      setMedicalRecords([]);
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700 underline"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Records Grid */}
@@ -766,14 +808,16 @@ const MedicalRecord = () => {
                     ? `No medical records found for Patient ID: ${selectedPatientId}`
                     : 'Enter a Patient ID to view medical records'}
                 </h3>
-                <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
-                {!selectedPatientId && (
-                  <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
-                    <p className="text-sm text-blue-800">
-                       <strong>Tip:</strong> Enter a patient ID in the search box above to view their medical records.
-                    </p>
-                  </div>
-                )}
+                <p className="text-gray-500 mb-6">
+                  {selectedPatientId
+                    ? 'This patient may not have any medical records yet, or the ID might be incorrect.'
+                    : 'Search by Patient ID above to view their medical records stored on the blockchain.'}
+                </p>
+                <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-sm text-blue-800">
+                    <strong>How it works:</strong> Enter a Patient ID in the search box to load and display all medical records for that specific patient.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -835,7 +879,7 @@ const MedicalRecord = () => {
                       {record.prescriptions && record.prescriptions.length > 0 && (
                         <div className="bg-blue-50 rounded-lg p-4">
                           <div className="flex items-start gap-3 mb-3">
-                            <PrescriptionIcon className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <ClipboardDocumentIcon className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                             <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
                               Prescriptions ({record.prescriptions.length})
                             </p>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cog6ToothIcon, BellIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, BellIcon, UserIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useLocation } from 'react-router-dom';
 
 const Header = ({ principal, isConnecting, onConnectWallet, onDisconnectWallet }) => {
@@ -28,56 +28,131 @@ const Header = ({ principal, isConnecting, onConnectWallet, onDisconnectWallet }
     );
   } else {
     const title = location.pathname.replace('/', '').replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
-    leftContent = <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>;
+    leftContent = <h1 className="text-2xl font-semibold text-gray-800">{title || 'Dashboard'}</h1>;
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-40">
       <div className="flex items-center justify-between">
         {leftContent}
 
         <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-500 hover:text-gray-700">
+          {/* Settings Button */}
+          <button 
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Settings"
+          >
             <Cog6ToothIcon className="w-6 h-6" />
           </button>
-          <button className="p-2 text-gray-500 hover:text-gray-700">
+          
+          {/* Notifications Button */}
+          <button 
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors relative"
+            title="Notifications"
+          >
             <BellIcon className="w-6 h-6" />
+            {/* Notification dot */}
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
 
+          {/* User Authentication Section */}
           {!principal ? (
             <button
               onClick={onConnectWallet}
               disabled={isConnecting}
-              className="px-4 py-2 bg-[#A2F2EF] text-gray-800 rounded-lg font-medium hover:bg-[#8EEAE7] disabled:opacity-50"
+              className="px-4 py-2 bg-[#A2F2EF] text-gray-800 rounded-lg font-medium hover:bg-[#8EEAE7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
-              {isConnecting ? 'Connecting...' : 'Login'}
+              {isConnecting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-800"></div>
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <UserIcon className="w-4 h-4" />
+                  Login with Internet Identity
+                </>
+              )}
             </button>
           ) : (
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="flex items-center space-x-3 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
+                {/* Avatar */}
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">{principal.slice(0, 2).toUpperCase()}</span>
+                  <span className="text-white font-semibold text-sm">
+                    {principal.slice(0, 2).toUpperCase()}
+                  </span>
                 </div>
-                <span className="font-medium text-gray-800">{formatAddress(principal)}</span>
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                
+                {/* Principal Info */}
+                <div className="text-left">
+                  <div className="font-medium text-gray-800 text-sm">
+                    {formatAddress(principal)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Internet Identity
+                  </div>
+                </div>
+                
+                {/* Dropdown Arrow */}
+                <ChevronDownIcon className={`w-4 h-4 text-gray-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2 z-50">
-                  <button
-                    onClick={() => {
-                      onDisconnectWallet();
-                      setShowDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Logout
-                  </button>
-                </div>
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowDropdown(false)}
+                  ></div>
+                  
+                  {/* Menu */}
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                    {/* User Info */}
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <div className="text-sm font-medium text-gray-900">Connected Wallet</div>
+                      <div className="text-xs text-gray-600 break-all mt-1">
+                        {principal}
+                      </div>
+                    </div>
+                    
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(principal);
+                          setShowDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Copy Principal ID
+                      </button>
+                      
+                      <button
+                        onClick={() => setShowDropdown(false)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Account Settings
+                      </button>
+                      
+                      <hr className="my-1" />
+                      
+                      <button
+                        onClick={() => {
+                          onDisconnectWallet();
+                          setShowDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}
