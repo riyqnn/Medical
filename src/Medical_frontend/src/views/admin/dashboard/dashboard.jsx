@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ArrowLeft, RefreshCw, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { getPrincipal, getActor, isAuthenticated } from '../../../service/auth';
 
 const Adashboard = () => {
@@ -13,6 +13,7 @@ const Adashboard = () => {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [principal, setPrincipal] = useState(null);
   const [actor, setActor] = useState(null);
+  const [sortOrder, setSortOrder] = useState('desc');
 
   // Initialize auth data
   useEffect(() => {
@@ -36,6 +37,10 @@ const Adashboard = () => {
     const authInterval = setInterval(initializeAuth, 5000);
     return () => clearInterval(authInterval);
   }, []);
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'));
+  };
 
   // Fetch hospitals from canister
   const fetchHospitals = async () => {
@@ -68,8 +73,26 @@ const Adashboard = () => {
     try {
       if (!actor) return [];
       const result = await actor.getMedicalRecordsByPatient(patientId);
+      console.log(`Fetched medical records for hospitalId=`, result);
+
       return result || [];
     } catch (err) {
+      return [];
+    }
+  };
+
+  const fetchMedicalRecordsHospitalID = async (hospitalId, page, pageSize) => {
+    try {
+      if (!actor) {
+        console.log('actor is not ready in fetchMedicalRecordsHospitalID');
+        return [];
+      }
+      console.log('Calling getMedicalRecordsByHospitalPaged on actor', hospitalId, page, pageSize);
+      const result = await actor.getMedicalRecordsByHospitalPaged(hospitalId, page, pageSize);
+      console.log('Result from getMedicalRecordsByHospitalPaged:', result);
+      return result || [];
+    } catch (err) {
+      console.error('Error in fetchMedicalRecordsHospitalID:', err);
       return [];
     }
   };
@@ -179,12 +202,11 @@ const Adashboard = () => {
       const stats = await getHospitalStats(Number(hospital.id));
       setSelectedHospital(prev => ({ ...prev, stats }));
       const allRecords = [];
-      for (let patientId = 1; patientId <= 5; patientId++) {
-        const records = await fetchMedicalRecords(patientId);
-        allRecords.push(...records);
-      }
-      const sortedRecords = allRecords.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
-      setMedicalRecords(sortedRecords.slice(0, 10));
+      console.log('actor before fetchMedicalRecordsHospitalID:', actor);
+
+      const recordsByHospitalId = await fetchMedicalRecordsHospitalID(Number(hospital.id),0,5);
+      setMedicalRecords(recordsByHospitalId);
+      console.log(recordsByHospitalId,Number(hospital.id))
       setCurrentView('dashboard');
       setError(null);
     } catch (err) {
@@ -193,6 +215,12 @@ const Adashboard = () => {
       setLoading(false);
     }
   };
+
+  const sortedRecords = [...medicalRecords].sort((a, b) => {
+    return sortOrder === 'desc'
+      ? Number(b.createdAt) - Number(a.createdAt)
+      : Number(a.createdAt) - Number(b.createdAt);
+  });
 
   // Refresh data manually
   const refreshData = async () => {
@@ -576,7 +604,22 @@ const Adashboard = () => {
                   <p className="text-slate-600">Loading medical records...</p>
                 </div>
               )}
-              
+              {/* Sort Button */}
+              <button
+                onClick={toggleSortOrder}
+                className="inline-flex items-center gap-2 px-2 py-1 mb-4 rounded-md bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] text-dark transition"
+                aria-label="Toggle sort order"
+                title="Toggle sort order"
+              >
+                {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+                {sortOrder === 'desc' ? (
+                  <ChevronDown className="w-5 h-5" />
+                ) : (
+                  <ChevronUp className="w-5 h-5" />
+                )}
+              </button>
+
+              {/* Content */}
               {!loading && medicalRecords.length === 0 && (
                 <div className="text-center py-16">
                   <div className="w-16 h-16 bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -585,9 +628,8 @@ const Adashboard = () => {
                   <p className="text-slate-600">No medical records found</p>
                 </div>
               )}
-              
               <div className="space-y-4">
-                {medicalRecords.map((record) => {
+                {sortedRecords.map((record,index) => {
                   const doctor = doctors.find(d => Number(d.id) === Number(record.doctorId));
                   return (
                     <div
@@ -597,7 +639,7 @@ const Adashboard = () => {
                       <div className="flex items-center space-x-4">
                         <div className="w-14 h-14 bg-gradient-to-br from-[#A2F2EF] to-[#8EEAE7] rounded-2xl flex items-center justify-center shadow-lg">
                           <span className="text-slate-700 font-bold text-lg">
-                            {Number(record.patientId).toString().slice(-2).padStart(2, '0')}
+                            {index+1}
                           </span>
                         </div>
                         <div className="flex-1">

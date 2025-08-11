@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Shield, Users, BarChart3, Clock, CheckCircle, ArrowRight, Menu, X, Phone, Mail, MapPin } from 'lucide-react';
-import Navigation from '../components/nav';
 import Logo from '/logo.png';
 import LogoWhite from '/logo-white.png';
 

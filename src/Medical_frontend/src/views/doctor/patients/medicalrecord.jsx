@@ -106,7 +106,7 @@ const MedicalRecord = () => {
       setUserHospitals(userHospitalsData);
       
       // Load all medical records by trying different patient IDs
-      await loadAllMedicalRecords();
+      await loadAllMedicalRecords(normalizedDoctors[0].hospitalId);
     } catch (error) {
       console.error('Error loading blockchain data:', error);
       setActorError('Failed to load data from blockchain. Please try refreshing.');
@@ -115,14 +115,25 @@ const MedicalRecord = () => {
     }
   };
 
+  const fetchMedicalRecordsHospitalID = async (hospitalId,page,pageSize) => {
+    if (!actor) return [];
+    try {
+      const result = await actor.getMedicalRecordsByHospitalPaged(hospitalId,page,pageSize);
+      console.log(`Fetched medical records for hospitalId=${hospitalId}, page=${page}`, result);
+      return result || [];
+    } catch (err) {
+      return [];
+    }
+  };
+
   // New function to load all medical records
-  const loadAllMedicalRecords = async () => {
+  const loadAllMedicalRecords = async (hospitalId) => {
     if (!actor) return;
     
     try {
-      // Since there's no getAllMedicalRecords, we'll start with an empty array
-      // Records will be loaded when user searches or when new records are added
-      setMedicalRecords([]);
+      // This will take all the records according to hospitalId
+      const allRecords = await fetchMedicalRecordsHospitalID(hospitalId,0,5);
+      setMedicalRecords(allRecords);
       console.log('Medical records initialized. Use search to view specific patient records.');
     } catch (error) {
       console.error('Error initializing medical records:', error);
@@ -821,7 +832,7 @@ const MedicalRecord = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRecords.map((record) => (
+                {filteredRecords.map((record,index) => (
                   <div
                     key={Number(record.id)}
                     className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
@@ -834,7 +845,7 @@ const MedicalRecord = () => {
                             <DocumentTextIcon className="w-5 h-5 text-[#A2F2EF]" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">Record #{Number(record.id)}</h3>
+                            <h3 className="font-semibold text-gray-900">Record #{index+1}</h3>
                             <p className="text-sm text-gray-600">Patient ID: {Number(record.patientId)}</p>
                           </div>
                         </div>

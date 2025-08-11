@@ -14,6 +14,14 @@ actor MedicalCanister {
     logoURL: Text;
     walletAddress: Principal;
     isActive: Bool;
+  }; 
+
+  type Profile = {
+    id:Nat;
+    name:Text;
+    walletAddress: Principal;
+    photoURL:Text;
+    address:Text;    
   };
 
   type Doctor = {
@@ -60,10 +68,12 @@ actor MedicalCanister {
 
   stable var hospitals: [Hospital] = [];
   stable var doctors: [Doctor] = [];
+  stable var profiles: [Profile] = [];
   stable var medicalRecords: [MedicalRecord] = [];
   stable var doctorSchedules: [DoctorSchedule] = []; // New
 
   stable var hospitalCounter: Nat = 0;
+  stable var profileCounter: Nat = 0; // New
   stable var doctorCounter: Nat = 0;
   stable var recordCounter: Nat = 0;
   stable var scheduleCounter: Nat = 0; // New
@@ -271,6 +281,21 @@ actor MedicalCanister {
 
   public query func getMedicalRecordsByPatient(patientId: Nat) : async [MedicalRecord] {
     Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { r.patientId == patientId });
+  };
+
+  // New : Get medical record according to the hospitalID(support pagination)
+  public query func getMedicalRecordsByHospitalPaged(hospitalId: Nat, page: Nat, pageSize: Nat) : async [MedicalRecord] {
+    let filtered = Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { r.hospitalId == hospitalId });
+    let start = page * pageSize;
+    
+    if (start >= Array.size(filtered)) {
+      return [];
+    };
+
+    let end = start + pageSize;
+    let safeEnd = if (end > Array.size(filtered)) Array.size(filtered) else end;
+
+    return Array.subArray<MedicalRecord>(filtered, start, safeEnd);
   };
 
   // NEW: Get doctor schedule
