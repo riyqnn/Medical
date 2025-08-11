@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { BuildingOfficeIcon, ShieldExclamationIcon, CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, ShieldExclamationIcon, CheckIcon, CurrencyDollarIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
 
 const Buy = () => {
   const {
@@ -19,11 +19,19 @@ const Buy = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [registrationResult, setRegistrationResult] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreviewURL, setLogoPreviewURL] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Pinata configuration
+  const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY ;
+  const PINATA_API_SECRET = import.meta.env.VITE_PINATA_API_SECRET;
+  const PINATA_JWT = import.meta.env.VITE_PINATA_JWT ;
+  const PINATA_GATEWAY = import.meta.env.VITE_PINATA_GATEWAY ;
 
   // Pricing plans (frontend only)
   const pricingPlans = [
@@ -58,7 +66,6 @@ const Buy = () => {
     if (logoFile) {
       const url = URL.createObjectURL(logoFile);
       setLogoPreviewURL(url);
-      setFormData((prev) => ({ ...prev, logoURL: url }));
 
       return () => {
         URL.revokeObjectURL(url);
@@ -67,6 +74,59 @@ const Buy = () => {
       setLogoPreviewURL('');
     }
   }, [logoFile]);
+
+  // Upload file to Pinata
+  const uploadToPinata = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const pinataMetadata = JSON.stringify({
+      name: `hospital-logo-${Date.now()}`,
+      keyvalues: {
+        hospitalName: formData.hospitalName || 'unknown',
+        uploadedAt: new Date().toISOString()
+      }
+    });
+    formData.append('pinataMetadata', pinataMetadata);
+
+    const pinataOptions = JSON.stringify({
+      cidVersion: 0,
+    });
+    formData.append('pinataOptions', pinataOptions);
+
+    try {
+      setIsUploadingLogo(true);
+      setUploadProgress(20);
+
+      const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PINATA_JWT}`,
+        },
+        body: formData,
+      });
+
+      setUploadProgress(60);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      setUploadProgress(100);
+      
+      // Return the IPFS URL using the custom gateway
+      const ipfsUrl = `https://${PINATA_GATEWAY}/ipfs/${result.IpfsHash}`;
+      return ipfsUrl;
+    } catch (error) {
+      console.error('Pinata upload error:', error);
+      throw new Error(`Failed to upload logo to IPFS: ${error.message}`);
+    } finally {
+      setIsUploadingLogo(false);
+      setTimeout(() => setUploadProgress(0), 1000);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -147,16 +207,37 @@ const Buy = () => {
     setErrors({});
 
     try {
-      // Simulate payment processing (frontend only)
+      let logoUrl = formData.logoURL;
+
+      // Upload logo to Pinata if a file is selected
+      if (logoFile) {
+        try {
+          console.log('Uploading logo to Pinata...');
+          logoUrl = await uploadToPinata(logoFile);
+          console.log('Logo uploaded successfully:', logoUrl);
+          
+          // Update form data with the IPFS URL
+          setFormData(prev => ({ ...prev, logoURL: logoUrl }));
+        } catch (uploadError) {
+          console.error('Logo upload failed:', uploadError);
+          setErrors({ submit: `Logo upload failed: ${uploadError.message}` });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Register hospital with IPFS logo URL
+      console.log('Registering hospital with logo URL:', logoUrl);
       const result = await actor.registerHospital(
         formData.hospitalName.trim(),
-        formData.logoURL || logoPreviewURL
+        logoUrl
       );
       console.log('Registration result:', result);
       
-      // Refresh user role setelah registrasi berhasil
+      // Refresh user role after successful registration
       await refreshUserRole();
       
       setRegistrationResult(`Hospital "${formData.hospitalName}" has been successfully registered with ${pricingPlans.find(p => p.id === selectedPlan)?.name}!`);
@@ -187,6 +268,7 @@ const Buy = () => {
     setSubmitSuccess(false);
     setRegistrationResult('');
     setSelectedPlan('monthly');
+    setUploadProgress(0);
   };
 
   // Show loading while checking user role
@@ -362,7 +444,7 @@ const Buy = () => {
                             <p className="text-gray-600 text-lg mb-2">Drag & Drop your logo here</p>
                             <p className="text-gray-500 mb-4">or paste from clipboard</p>
                             <label className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-gray-900 rounded-lg font-medium cursor-pointer hover:from-[#8EEAE7] hover:to-[#7AE7E4] transition-all transform hover:scale-105">
-                              <CurrencyDollarIcon className="w-5 h-5 mr-2" />
+                              <CloudArrowUpIcon className="w-5 h-5 mr-2" />
                               Choose File
                               <input
                                 type="file"
@@ -375,6 +457,23 @@ const Buy = () => {
                         )}
                       </div>
                     </div>
+                    
+                    {/* Upload Progress */}
+                    {uploadProgress > 0 && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                          <span>Uploading to IPFS...</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                    
                     {errors.logoURL && (
                       <p className="text-red-500 text-sm mt-2 flex items-center">
                         <ShieldExclamationIcon className="w-4 h-4 mr-1" />
@@ -424,6 +523,19 @@ const Buy = () => {
                       </div>
                     </div>
 
+                    {/* IPFS Info */}
+                    {formData.logoURL && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                          <CloudArrowUpIcon className="w-5 h-5 mr-2" />
+                          Logo uploaded to IPFS
+                        </h4>
+                        <p className="text-blue-700 text-sm break-all">
+                          {formData.logoURL}
+                        </p>
+                      </div>
+                    )}
+
                     {errors.submit && (
                       <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                         <p className="text-red-800 font-medium flex items-center">
@@ -444,13 +556,18 @@ const Buy = () => {
                       <button
                         type="button"
                         onClick={handleSubmit}
-                        disabled={isSubmitting || !actor || !principal}
+                        disabled={isSubmitting || isUploadingLogo || !actor || !principal}
                         className="flex-1 px-6 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] hover:from-[#8EEAE7] hover:to-[#7AE7E4] text-gray-900 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg flex items-center justify-center"
                       >
-                        {isSubmitting ? (
+                        {isUploadingLogo ? (
                           <>
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
-                            Processing Payment...
+                            Uploading Logo...
+                          </>
+                        ) : isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
+                            Processing Registration...
                           </>
                         ) : (
                           `Register Hospital (${pricingPlans.find(p => p.id === selectedPlan)?.price})`

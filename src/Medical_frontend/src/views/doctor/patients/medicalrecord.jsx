@@ -12,7 +12,14 @@ import {
   MagnifyingGlassIcon,
   ClockIcon,
   CheckCircleIcon,
+  CloudArrowUpIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
+
+const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY;
+const PINATA_API_SECRET = import.meta.env.VITE_PINATA_API_SECRET;
+const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
+const PINATA_GATEWAY = import.meta.env.VITE_PINATA_GATEWAY;
 
 const MedicalRecord = () => {
   const { principal, actor } = useOutletContext();
@@ -31,7 +38,9 @@ const MedicalRecord = () => {
     hospitalId: '',
     diagnosis: '',
     cpptURL: '',
+    cpptInputType: 'url', // 'url' or 'upload'
     evidenceURLs: [''],
+    evidenceInputTypes: ['url'], // array matching evidenceURLs
     prescriptions: [
       {
         medicationName: '',
@@ -44,6 +53,10 @@ const MedicalRecord = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStates, setUploadStates] = useState({
+    cppt: { uploading: false, progress: 0 },
+    evidence: {} // will store by index
+  });
 
   useEffect(() => {
     console.log('MedicalRecord mounted, principal:', principal, 'actor:', actor);
@@ -53,6 +66,99 @@ const MedicalRecord = () => {
       console.warn('Cannot load data: principal or actor missing, or principal is anonymous');
     }
   }, [actor, principal]);
+
+  // Pinata upload function
+  const uploadToPinata = async (file, type, index = null) => {
+    if (!PINATA_JWT) {
+      throw new Error('Pinata JWT not configured');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const metadata = JSON.stringify({
+      name: `${type}_${Date.now()}_${file.name}`,
+      keyvalues: {
+        type: type,
+        uploadedBy: principal,
+        timestamp: Date.now()
+      }
+    });
+    formData.append('pinataMetadata', metadata);
+
+    const options = JSON.stringify({
+      cidVersion: 0,
+    });
+    formData.append('pinataOptions', options);
+
+    try {
+      // Update upload state
+      if (type === 'cppt') {
+        setUploadStates(prev => ({
+          ...prev,
+          cppt: { uploading: true, progress: 0 }
+        }));
+      } else if (type === 'evidence' && index !== null) {
+        setUploadStates(prev => ({
+          ...prev,
+          evidence: {
+            ...prev.evidence,
+            [index]: { uploading: true, progress: 0 }
+          }
+        }));
+      }
+
+      const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PINATA_JWT}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Pinata upload failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+     const ipfsUrl = `https://${PINATA_GATEWAY.replace(/^https?:\/\//, '').split('/')[0]}/ipfs/${result.IpfsHash}`;
+
+      // Update upload state to success
+      if (type === 'cppt') {
+        setUploadStates(prev => ({
+          ...prev,
+          cppt: { uploading: false, progress: 100 }
+        }));
+      } else if (type === 'evidence' && index !== null) {
+        setUploadStates(prev => ({
+          ...prev,
+          evidence: {
+            ...prev.evidence,
+            [index]: { uploading: false, progress: 100 }
+          }
+        }));
+      }
+
+      return ipfsUrl;
+    } catch (error) {
+      // Update upload state to error
+      if (type === 'cppt') {
+        setUploadStates(prev => ({
+          ...prev,
+          cppt: { uploading: false, progress: 0 }
+        }));
+      } else if (type === 'evidence' && index !== null) {
+        setUploadStates(prev => ({
+          ...prev,
+          evidence: {
+            ...prev.evidence,
+            [index]: { uploading: false, progress: 0 }
+          }
+        }));
+      }
+      throw error;
+    }
+  };
 
   const loadBlockchainData = async () => {
     if (!actor) {
@@ -115,10 +221,10 @@ const MedicalRecord = () => {
     }
   };
 
-  const fetchMedicalRecordsHospitalID = async (hospitalId,page,pageSize) => {
+  const fetchMedicalRecordsHospitalID = async (hospitalId, page, pageSize) => {
     if (!actor) return [];
     try {
-      const result = await actor.getMedicalRecordsByHospitalPaged(hospitalId,page,pageSize);
+      const result = await actor.getMedicalRecordsByHospitalPaged(hospitalId, page, pageSize);
       console.log(`Fetched medical records for hospitalId=${hospitalId}, page=${page}`, result);
       return result || [];
     } catch (err) {
@@ -126,13 +232,11 @@ const MedicalRecord = () => {
     }
   };
 
-  // New function to load all medical records
   const loadAllMedicalRecords = async (hospitalId) => {
     if (!actor) return;
     
     try {
-      // This will take all the records according to hospitalId
-      const allRecords = await fetchMedicalRecordsHospitalID(hospitalId,0,5);
+      const allRecords = await fetchMedicalRecordsHospitalID(hospitalId, 0, 5);
       setMedicalRecords(allRecords);
       console.log('Medical records initialized. Use search to view specific patient records.');
     } catch (error) {
@@ -147,7 +251,6 @@ const MedicalRecord = () => {
     }
 
     if (!patientId) {
-      // If no patient ID, clear records
       setMedicalRecords([]);
       return;
     }
@@ -188,6 +291,62 @@ const MedicalRecord = () => {
     }
   };
 
+  const handleCpptInputTypeChange = (type) => {
+    setFormData(prev => ({
+      ...prev,
+      cpptInputType: type,
+      cpptURL: '' // Clear URL when switching types
+    }));
+  };
+
+  const handleCpptFileUpload = async (file) => {
+    try {
+      const ipfsUrl = await uploadToPinata(file, 'cppt');
+      setFormData(prev => ({
+        ...prev,
+        cpptURL: ipfsUrl
+      }));
+    } catch (error) {
+      console.error('CPPT upload error:', error);
+      setErrors(prev => ({
+        ...prev,
+        cpptURL: `Upload failed: ${error.message}`
+      }));
+    }
+  };
+
+  const handleEvidenceInputTypeChange = (index, type) => {
+    const newInputTypes = [...formData.evidenceInputTypes];
+    newInputTypes[index] = type;
+    
+    const newEvidenceURLs = [...formData.evidenceURLs];
+    newEvidenceURLs[index] = ''; // Clear URL when switching types
+    
+    setFormData(prev => ({
+      ...prev,
+      evidenceInputTypes: newInputTypes,
+      evidenceURLs: newEvidenceURLs
+    }));
+  };
+
+  const handleEvidenceFileUpload = async (index, file) => {
+    try {
+      const ipfsUrl = await uploadToPinata(file, 'evidence', index);
+      const newEvidenceURLs = [...formData.evidenceURLs];
+      newEvidenceURLs[index] = ipfsUrl;
+      setFormData(prev => ({
+        ...prev,
+        evidenceURLs: newEvidenceURLs
+      }));
+    } catch (error) {
+      console.error('Evidence upload error:', error);
+      setErrors(prev => ({
+        ...prev,
+        [`evidence_${index}`]: `Upload failed: ${error.message}`
+      }));
+    }
+  };
+
   const handleEvidenceURLChange = (index, value) => {
     const newEvidenceURLs = [...formData.evidenceURLs];
     newEvidenceURLs[index] = value;
@@ -201,14 +360,17 @@ const MedicalRecord = () => {
     setFormData((prev) => ({
       ...prev,
       evidenceURLs: [...prev.evidenceURLs, ''],
+      evidenceInputTypes: [...prev.evidenceInputTypes, 'url']
     }));
   };
 
   const removeEvidenceURL = (index) => {
     const newEvidenceURLs = formData.evidenceURLs.filter((_, i) => i !== index);
+    const newInputTypes = formData.evidenceInputTypes.filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
       evidenceURLs: newEvidenceURLs,
+      evidenceInputTypes: newInputTypes
     }));
   };
 
@@ -310,7 +472,9 @@ const MedicalRecord = () => {
         hospitalId: '',
         diagnosis: '',
         cpptURL: '',
+        cpptInputType: 'url',
         evidenceURLs: [''],
+        evidenceInputTypes: ['url'],
         prescriptions: [
           {
             medicationName: '',
@@ -320,6 +484,12 @@ const MedicalRecord = () => {
             instructions: ''
           }
         ],
+      });
+
+      // Reset upload states
+      setUploadStates({
+        cppt: { uploading: false, progress: 0 },
+        evidence: {}
       });
 
       alert(`Medical record added successfully: ${result}`);
@@ -536,57 +706,248 @@ const MedicalRecord = () => {
 
               {/* CPPT Document */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CPPT Document URL *
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  CPPT Document *
                 </label>
-                <input
-                  type="url"
-                  name="cpptURL"
-                  value={formData.cpptURL}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors ${
-                    errors.cpptURL ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
-                  placeholder="https://example.com/cppt.pdf"
-                />
+                
+                {/* Input Type Selector */}
+                <div className="flex gap-4 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => handleCpptInputTypeChange('url')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      formData.cpptInputType === 'url'
+                        ? 'bg-[#A2F2EF] text-gray-900'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <LinkIcon className="w-4 h-4 inline mr-2" />
+                    URL Link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCpptInputTypeChange('upload')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      formData.cpptInputType === 'upload'
+                        ? 'bg-[#A2F2EF] text-gray-900'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <CloudArrowUpIcon className="w-4 h-4 inline mr-2" />
+                    Upload File
+                  </button>
+                </div>
+
+                {/* URL Input */}
+                {formData.cpptInputType === 'url' && (
+                  <input
+                    type="url"
+                    name="cpptURL"
+                    value={formData.cpptURL}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors ${
+                      errors.cpptURL ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="https://example.com/cppt.pdf"
+                  />
+                )}
+
+                {/* File Upload */}
+                {formData.cpptInputType === 'upload' && (
+                  <div className="space-y-3">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#A2F2EF] transition-colors">
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            handleCpptFileUpload(file);
+                          }
+                        }}
+                        className="hidden"
+                        id="cppt-upload"
+                        disabled={uploadStates.cppt.uploading}
+                      />
+                      <label
+                        htmlFor="cppt-upload"
+                        className={`cursor-pointer flex flex-col items-center ${
+                          uploadStates.cppt.uploading ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {uploadStates.cppt.uploading ? (
+                          <div className="flex flex-col items-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#A2F2EF] mb-2"></div>
+                            <span className="text-sm text-gray-600">Uploading to Pinata...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <CloudArrowUpIcon className="w-8 h-8 text-gray-400 mb-2" />
+                            <span className="text-sm font-medium text-gray-900">
+                              Click to upload CPPT document
+                            </span>
+                            <span className="text-xs text-gray-500 mt-1">
+                              PDF, DOC, DOCX, JPG, PNG up to 10MB
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                    
+                    {formData.cpptURL && (
+                      <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                        <span className="text-sm text-green-800 font-medium">File uploaded successfully</span>
+                        <a
+                          href={formData.cpptURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-[#A2F2EF] hover:text-[#8EEAE7] underline ml-auto"
+                        >
+                          View File
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {errors.cpptURL && <p className="mt-1 text-sm text-red-600">{errors.cpptURL}</p>}
               </div>
 
               {/* Evidence URLs */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Evidence URLs (Optional)
+                  Evidence Files (Optional)
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {formData.evidenceURLs.map((url, index) => (
-                    <div key={index} className="flex gap-3">
-                      <div className="relative flex-1">
-                        <PhotoIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input
-                          type="url"
-                          value={url}
-                          onChange={(e) => handleEvidenceURLChange(index, e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
-                          placeholder="https://example.com/evidence.jpg"
-                        />
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium text-gray-900">Evidence #{index + 1}</h4>
+                        {formData.evidenceURLs.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEvidenceURL(index)}
+                            className="text-red-600 hover:bg-red-100 p-1 rounded transition-colors"
+                          >
+                            <XCircleIcon className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
-                      {formData.evidenceURLs.length > 1 && (
+
+                      {/* Input Type Selector for Evidence */}
+                      <div className="flex gap-2 mb-3">
                         <button
                           type="button"
-                          onClick={() => removeEvidenceURL(index)}
-                          className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          onClick={() => handleEvidenceInputTypeChange(index, 'url')}
+                          className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
+                            formData.evidenceInputTypes[index] === 'url'
+                              ? 'bg-[#A2F2EF] text-gray-900'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
                         >
-                          <XCircleIcon className="w-5 h-5" />
+                          <LinkIcon className="w-3 h-3 inline mr-1" />
+                          URL
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEvidenceInputTypeChange(index, 'upload')}
+                          className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
+                            formData.evidenceInputTypes[index] === 'upload'
+                              ? 'bg-[#A2F2EF] text-gray-900'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
+                        >
+                          <CloudArrowUpIcon className="w-3 h-3 inline mr-1" />
+                          Upload
+                        </button>
+                      </div>
+
+                      {/* URL Input for Evidence */}
+                      {formData.evidenceInputTypes[index] === 'url' && (
+                        <div className="relative">
+                          <PhotoIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="url"
+                            value={url}
+                            onChange={(e) => handleEvidenceURLChange(index, e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A2F2EF] focus:border-transparent transition-colors"
+                            placeholder="https://example.com/evidence.jpg"
+                          />
+                        </div>
+                      )}
+
+                      {/* File Upload for Evidence */}
+                      {formData.evidenceInputTypes[index] === 'upload' && (
+                        <div className="space-y-3">
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#A2F2EF] transition-colors">
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  handleEvidenceFileUpload(index, file);
+                                }
+                              }}
+                              className="hidden"
+                              id={`evidence-upload-${index}`}
+                              disabled={uploadStates.evidence[index]?.uploading}
+                            />
+                            <label
+                              htmlFor={`evidence-upload-${index}`}
+                              className={`cursor-pointer flex flex-col items-center ${
+                                uploadStates.evidence[index]?.uploading ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {uploadStates.evidence[index]?.uploading ? (
+                                <div className="flex flex-col items-center">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#A2F2EF] mb-2"></div>
+                                  <span className="text-xs text-gray-600">Uploading...</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <CloudArrowUpIcon className="w-6 h-6 text-gray-400 mb-1" />
+                                  <span className="text-sm font-medium text-gray-900">
+                                    Click to upload evidence
+                                  </span>
+                                  <span className="text-xs text-gray-500 mt-1">
+                                    PDF, DOC, JPG, PNG up to 10MB
+                                  </span>
+                                </>
+                              )}
+                            </label>
+                          </div>
+                          
+                          {url && (
+                            <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                              <CheckCircleIcon className="w-4 h-4 text-green-600" />
+                              <span className="text-sm text-green-800 font-medium">File uploaded</span>
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-[#A2F2EF] hover:text-[#8EEAE7] underline ml-auto"
+                              >
+                                View
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {errors[`evidence_${index}`] && (
+                        <p className="mt-2 text-sm text-red-600">{errors[`evidence_${index}`]}</p>
                       )}
                     </div>
                   ))}
+                  
                   <button
                     type="button"
                     onClick={addEvidenceURL}
                     className="text-[#A2F2EF] hover:text-[#8EEAE7] text-sm font-medium transition-colors"
                   >
-                    + Add Another Evidence URL
+                    + Add Another Evidence File
                   </button>
                 </div>
               </div>
@@ -717,7 +1078,9 @@ const MedicalRecord = () => {
                       hospitalId: '',
                       diagnosis: '',
                       cpptURL: '',
+                      cpptInputType: 'url',
                       evidenceURLs: [''],
+                      evidenceInputTypes: ['url'],
                       prescriptions: [
                         {
                           medicationName: '',
@@ -729,6 +1092,10 @@ const MedicalRecord = () => {
                       ],
                     });
                     setErrors({});
+                    setUploadStates({
+                      cppt: { uploading: false, progress: 0 },
+                      evidence: {}
+                    });
                   }}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                 >

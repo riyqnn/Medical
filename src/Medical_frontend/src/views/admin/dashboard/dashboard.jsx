@@ -15,6 +15,9 @@ const Adashboard = () => {
   const [actor, setActor] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
 
+  // Pinata configuration
+  const PINATA_GATEWAY = import.meta.env.VITE_PINATA_GATEWAY;
+
   // Initialize auth data
   useEffect(() => {
     const initializeAuth = async () => {
@@ -37,6 +40,37 @@ const Adashboard = () => {
     const authInterval = setInterval(initializeAuth, 5000);
     return () => clearInterval(authInterval);
   }, []);
+
+  // Helper function to process IPFS URL
+  const processIPFSUrl = (url) => {
+    if (!url) return null;
+    
+    // If it's already using our custom gateway, return as is
+    if (url.includes(PINATA_GATEWAY)) {
+      return url;
+    }
+    
+    // If it's a standard IPFS URL, convert to our gateway
+    if (url.startsWith('https://ipfs.io/ipfs/')) {
+      const hash = url.replace('https://ipfs.io/ipfs/', '');
+      return `https://${PINATA_GATEWAY}/ipfs/${hash}`;
+    }
+    
+    // If it's an ipfs:// protocol URL
+    if (url.startsWith('ipfs://')) {
+      const hash = url.replace('ipfs://', '');
+      return `https://${PINATA_GATEWAY}/ipfs/${hash}`;
+    }
+    
+    // If it contains an IPFS hash pattern (Qm... or baf...)
+    const ipfsHashMatch = url.match(/(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|[a-f0-9]{46,})/);
+    if (ipfsHashMatch) {
+      return `https://${PINATA_GATEWAY}/ipfs/${ipfsHashMatch[1]}`;
+    }
+    
+    // If it's already a complete URL, return as is
+    return url;
+  };
 
   const toggleSortOrder = () => {
     setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'));
@@ -255,10 +289,11 @@ const Adashboard = () => {
     }
   };
 
-  // Hospital Logo component
+  // Enhanced Hospital Logo component with IPFS support
   const HospitalLogo = ({ logoURL, hospitalName, size = 'default' }) => {
     const [imageError, setImageError] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [processedUrl, setProcessedUrl] = useState(null);
     
     const sizeClasses = {
       small: 'w-10 h-10',
@@ -274,10 +309,39 @@ const Adashboard = () => {
 
     useEffect(() => {
       if (logoURL) {
+        const processed = processIPFSUrl(logoURL);
+        setProcessedUrl(processed);
         setImageError(false);
         setImageLoaded(false);
+        console.log('Original logo URL:', logoURL);
+        console.log('Processed logo URL:', processed);
       }
     }, [logoURL]);
+
+    const handleImageError = (e) => {
+      console.error('Image failed to load:', processedUrl);
+      setImageError(true);
+      
+      // Try fallback URLs if the original fails
+      if (logoURL && !imageError) {
+        // Try different IPFS gateways
+        const fallbackGateways = [
+          'https://ipfs.io/ipfs/',
+          'https://gateway.pinata.cloud/ipfs/',
+          'https://cloudflare-ipfs.com/ipfs/'
+        ];
+        
+        const ipfsHashMatch = logoURL.match(/(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|[a-f0-9]{46,})/);
+        if (ipfsHashMatch && fallbackGateways.length > 0) {
+          const hash = ipfsHashMatch[1];
+          const fallbackUrl = fallbackGateways[0] + hash;
+          console.log('Trying fallback URL:', fallbackUrl);
+          e.target.src = fallbackUrl;
+          fallbackGateways.shift(); // Remove the used gateway
+          return;
+        }
+      }
+    };
 
     if (!logoURL || imageError) {
       return (
@@ -295,18 +359,82 @@ const Adashboard = () => {
           </div>
         )}
         <img
-          src={logoURL}
+          src={processedUrl}
           alt={`${hospitalName} logo`}
           className={`w-full h-full object-contain transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onError={() => {
-            setImageError(true);
-          }}
+          onError={handleImageError}
           onLoad={() => {
+            console.log('Image loaded successfully:', processedUrl);
             setImageLoaded(true);
           }}
           style={{ backgroundColor: 'white' }}
+          crossOrigin="anonymous"
         />
       </div>
+    );
+  };
+
+  // Enhanced Doctor Photo component with IPFS support
+  const DoctorPhoto = ({ photoURL, doctorName }) => {
+    const [imageError, setImageError] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [processedUrl, setProcessedUrl] = useState(null);
+
+    useEffect(() => {
+      if (photoURL) {
+        const processed = processIPFSUrl(photoURL);
+        setProcessedUrl(processed);
+        setImageError(false);
+        setImageLoaded(false);
+      }
+    }, [photoURL]);
+
+    const handleImageError = (e) => {
+      setImageError(true);
+      
+      // Try fallback URLs if the original fails
+      if (photoURL && !imageError) {
+        const fallbackGateways = [
+          'https://ipfs.io/ipfs/',
+          'https://gateway.pinata.cloud/ipfs/'
+        ];
+        
+        const ipfsHashMatch = photoURL.match(/(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|[a-f0-9]{46,})/);
+        if (ipfsHashMatch && fallbackGateways.length > 0) {
+          const hash = ipfsHashMatch[1];
+          const fallbackUrl = fallbackGateways[0] + hash;
+          e.target.src = fallbackUrl;
+          fallbackGateways.shift();
+          return;
+        }
+      }
+    };
+
+    if (!photoURL || imageError) {
+      return (
+        <span className="text-slate-600 text-xl font-bold flex items-center justify-center">
+          {doctorName?.charAt(0) || 'D'}
+        </span>
+      );
+    }
+
+    return (
+      <>
+        {!imageLoaded && (
+          <span className="text-slate-600 text-xl font-bold flex items-center justify-center">
+            {doctorName?.charAt(0) || 'D'}
+          </span>
+        )}
+        <img
+          src={processedUrl}
+          alt={doctorName}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onError={handleImageError}
+          onLoad={() => setImageLoaded(true)}
+          crossOrigin="anonymous"
+          style={{ display: imageLoaded ? 'block' : 'none' }}
+        />
+      </>
     );
   };
 
@@ -682,20 +810,7 @@ const Adashboard = () => {
                     <div key={Number(doctor.id)} className="flex items-center space-x-4 bg-white/40 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/60 transition-all duration-300">
                       <div className="relative">
                         <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shadow-lg">
-                          {doctor.photoURL ? (
-                            <img
-                              src={doctor.photoURL}
-                              alt={doctor.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <span className="text-slate-600 text-xl font-bold" style={{display: doctor.photoURL ? 'none' : 'flex'}}>
-                            {doctor.name?.charAt(0)}
-                          </span>
+                          <DoctorPhoto photoURL={doctor.photoURL} doctorName={doctor.name} />
                         </div>
                         <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
                           doctor.isActive ? 'bg-green-400' : 'bg-red-400'
