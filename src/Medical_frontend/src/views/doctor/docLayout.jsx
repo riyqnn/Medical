@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './components/sidebar'; // Adjust path
-import Header from './components/header'; // Adjust path
+import Sidebar from './components/sidebar';
+import Header from '../../components_global/header';
 import { initializeAuth, getPrincipal, getActor, loginInternetIdentity, logout } from '../../service/auth'; // Adjust path
 
 function DoctorLayout() {
