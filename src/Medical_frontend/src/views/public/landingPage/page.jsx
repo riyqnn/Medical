@@ -1,68 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Shield, Users, BarChart3, Clock, CheckCircle, ArrowRight, Menu, X, Phone, Mail, MapPin } from 'lucide-react';
-import Logo from '/logo.png';
+import { ChevronRight, Shield, Users, BarChart3, Clock, CheckCircle,  ArrowRight, Menu, X, Phone, Mail, MapPin, Building2, Activity } from 'lucide-react';
 import LogoWhite from '/logo-white.png';
+import Background from '/background.jpg'
 
-// Hero Section Component
+
 const HeroSection = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left">
-            <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Streamline
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent block">
-                Hospital Operations
-              </span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Transform hospital's administrative processes with our comprehensive management platform. 
-              Reduce costs, improve efficiency, and focus on what matters most - patient care.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 flex items-center justify-center">
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </button>
-              <button className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-all">
-                Schedule Demo
-              </button>
-            </div>
+    <div
+      className="relative min-h-screen flex flex-col bg-white"
+      style={{
+        backgroundImage: `url(${Background})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Subtle overlay for better text readability */}
+      <div className="absolute inset-0 z-0"></div>
+
+      {/* Main Content */}
+      <main className="flex-grow flex flex-col justify-center items-center px-6 text-center max-w-5xl mx-auto relative z-10">
+        <div
+          className={`transform transition-all duration-1000 ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
+        >
+          <h1 className="font-bold text-5xl md:text-7xl leading-tight text-white mb-6 drop-shadow-lg">
+            Streamline Hospital
+            <span className="block bg-gradient-to-br from-[#c0e5ff] to-[#b7e7ff] bg-clip-text text-transparent drop-shadow-lg">
+              Operations
+            </span>
+          </h1>
+
+          <p className="text-xl text-white/90 max-w-3xl mx-auto mb-10 leading-relaxed drop-shadow-sm font-medium">
+            Transform your hospital's administrative processes with comprehensive management. 
+            Reduce costs, improve efficiency, and focus on patient care.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <a
+            href="/buy"
+            className="px-10 py-4 bg-white text-slate-800 rounded-xl font-semibold hover:bg-white/95 transform hover:scale-105 transition-all duration-200 shadow-xl hover:shadow-2xl inline-block text-center"
+          >
+            Start Free Trial
+          </a>
+
+            <button className="px-10 py-4 border-2 border-white/80 text-white rounded-xl font-semibold hover:bg-white/10 hover:border-white transition-all duration-200 backdrop-blur-sm">
+              Schedule Demo
+            </button>
           </div>
-          
-          <div className="relative">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
-              <div className="bg-white rounded-2xl p-6 space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="font-semibold">System Status: Online</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-blue-600">1,247</div>
-                    <div className="text-sm text-gray-600">Active Staff</div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-green-600">98.5%</div>
-                    <div className="text-sm text-gray-600">Efficiency</div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg p-4 text-white">
-                  <div className="text-sm opacity-80">Monthly Savings</div>
-                  <div className="text-3xl font-bold">$127,500</div>
-                </div>
-              </div>
+        </div>
+
+        {/* Trust Section */}
+        <div
+          className={`mt-24 transform transition-all duration-1000 delay-300 ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
+        >
+          <p className="text-sm font-semibold text-white/80 mb-8 tracking-wider">
+            TRUSTED BY 50+ HOSPITALS
+          </p>
+          <div className="flex flex-wrap justify-center gap-12 text-white/70">
+            <div className="flex items-center space-x-3 hover:text-white/90 transition-colors duration-200">
+              <Building2 className="w-5 h-5" />
+              <span className="text-base font-medium">Metro General</span>
+            </div>
+            <div className="flex items-center space-x-3 hover:text-white/90 transition-colors duration-200">
+              <Activity className="w-5 h-5" />
+              <span className="text-base font-medium">Care Central</span>
+            </div>
+            <div className="flex items-center space-x-3 hover:text-white/90 transition-colors duration-200">
+              <Users className="w-5 h-5" />
+              <span className="text-base font-medium">Unity Health</span>
+            </div>
+            <div className="flex items-center space-x-3 hover:text-white/90 transition-colors duration-200">
+              <Shield className="w-5 h-5" />
+              <span className="text-base font-medium">SafeMed Corp</span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </main>
+    </div>
   );
 };
 
 // Stats Section Component
-const StatsSection = ({ animateStats }) => {
+const StatsSection = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
   const stats = [
     { number: "500+", label: "Hospitals Served" },
     { number: "99.9%", label: "Uptime Guarantee" },
@@ -70,18 +102,42 @@ const StatsSection = ({ animateStats }) => {
     { number: "24/7", label: "Support Available" }
   ];
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const element = document.getElementById('stats');
+    if (element) observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="stats" className="py-16 bg-white/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="stats" className="py-20 bg-white/90 backdrop-blur-sm">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className={`text-4xl font-bold text-blue-600 mb-2 transition-all duration-1000 ${
-                animateStats ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
-              }`} style={{ transitionDelay: `${index * 200}ms` }}>
+            <div 
+              key={index} 
+              className={`text-center transform transition-all duration-700 ${
+                isVisible 
+                  ? 'translate-y-0 opacity-100' 
+                  : 'translate-y-4 opacity-0'
+              }`}
+              style={{ transitionDelay: `${index * 150}ms` }}
+            >
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4f46e5] to-[#3b82f6] bg-clip-text text-transparent mb-2">
                 {stat.number}
               </div>
-              <div className="text-gray-600 font-medium">{stat.label}</div>
+              <div className="text-slate-600 text-sm font-medium">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -91,16 +147,23 @@ const StatsSection = ({ animateStats }) => {
 };
 
 // Feature Card Component
-const FeatureCard = ({ feature, index }) => {
+const FeatureCard = ({ feature, index, isVisible }) => {
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-      <div className="text-blue-600 mb-4">
+    <div 
+      className={`bg-white/80 backdrop-blur-sm rounded-2xl p-8 transform transition-all duration-700 hover:scale-105 hover:shadow-lg ${
+        isVisible 
+          ? 'translate-y-0 opacity-100' 
+          : 'translate-y-8 opacity-0'
+      }`}
+      style={{ transitionDelay: `${index * 200}ms` }}
+    >
+      <div className="w-12 h-12 bg-gradient-to-r from-[#4f46e5] to-[#3b82f6] rounded-xl flex items-center justify-center text-white mb-6">
         {feature.icon}
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-3">
+      <h3 className="text-xl font-semibold text-slate-800 mb-4">
         {feature.title}
       </h3>
-      <p className="text-gray-600">
+      <p className="text-slate-600 leading-relaxed">
         {feature.description}
       </p>
     </div>
@@ -109,44 +172,64 @@ const FeatureCard = ({ feature, index }) => {
 
 // Features Section Component
 const FeaturesSection = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
   const features = [
     {
-      icon: <Shield className="w-8 h-8" />,
+      icon: <Shield className="w-6 h-6" />,
       title: "HIPAA Compliant Security",
       description: "Bank-level encryption and security protocols to protect sensitive patient data and administrative information."
     },
     {
-      icon: <Users className="w-8 h-8" />,
+      icon: <Users className="w-6 h-6" />,
       title: "Staff Management",
       description: "Streamline scheduling, payroll, and HR processes with automated workflows and real-time updates."
     },
     {
-      icon: <BarChart3 className="w-8 h-8" />,
+      icon: <BarChart3 className="w-6 h-6" />,
       title: "Analytics & Reporting",
       description: "Comprehensive dashboards and custom reports to optimize operations and improve decision-making."
     },
     {
-      icon: <Clock className="w-8 h-8" />,
+      icon: <Clock className="w-6 h-6" />,
       title: "24/7 Support",
-      description: "Round-the-clock technical support and maintenance to ensure the systems run smoothly."
+      description: "Round-the-clock technical support and maintenance to ensure systems run smoothly."
     }
   ];
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const element = document.getElementById('features');
+    if (element) observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section id="features" className="py-20 px-6 bg-gradient-to-br from-slate-50 to-blue-50/30">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
             Powerful Features for Modern Healthcare
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-3xl mx-auto">
             Our comprehensive platform provides everything you need to manage hospital's administrative operations efficiently and securely.
           </p>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <FeatureCard key={index} feature={feature} index={index} />
+            <FeatureCard key={index} feature={feature} index={index} isVisible={isVisible} />
           ))}
         </div>
       </div>
@@ -156,6 +239,8 @@ const FeaturesSection = () => {
 
 // Benefits Section Component
 const BenefitsSection = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  
   const benefits = [
     "Reduce administrative costs by up to 40%",
     "Improve staff productivity with automated workflows",
@@ -165,38 +250,66 @@ const BenefitsSection = () => {
     "Scalable solutions for hospitals of all sizes"
   ];
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const element = document.getElementById('benefits');
+    if (element) observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="benefits" className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="benefits" className="py-20 bg-gradient-to-br from-[#4f46e5] to-[#a3c6fc]">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl font-bold mb-6">
+          <div className={`transform transition-all duration-700 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+          }`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
               Why Choose Medly?
             </h2>
-            <p className="text-xl opacity-90 mb-8">
+            <p className="text-lg text-white/90 mb-8 leading-relaxed">
               Join hundreds of hospitals that have transformed their operations and improved patient care with our platform.
             </p>
             <div className="space-y-4">
               {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-                  <span className="text-lg">{benefit}</span>
+                <div 
+                  key={index} 
+                  className={`flex items-center space-x-3 transform transition-all duration-500 ${
+                    isVisible ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                  }`}
+                  style={{ transitionDelay: `${index * 100}ms` }}
+                >
+                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0" />
+                  <span className="text-white">{benefit}</span>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8">
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2">Ready to Get Started?</h3>
-                <p className="opacity-90">Experience the difference today</p>
+          <div className={`transform transition-all duration-700 delay-300 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+          }`}>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-semibold text-white mb-2">Ready to Get Started?</h3>
+                <p className="text-white/80">Experience the difference today</p>
               </div>
-              <div className="space-y-4">
-                <button className="w-full bg-white text-blue-600 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-all transform hover:scale-105">
+              <div className="space-y-3">
+                <button className="w-full bg-white text-[#4f46e5] py-3 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
                   Start Your Free Trial
                 </button>
-                <button className="w-full border-2 border-white text-white py-4 rounded-lg font-semibold hover:bg-white/10 transition-all">
+                <button className="w-full border border-white/30 text-white py-3 rounded-lg font-medium hover:bg-white/10 transition-all duration-200">
                   Request a Demo
                 </button>
               </div>
@@ -209,47 +322,80 @@ const BenefitsSection = () => {
 };
 
 // Contact Card Component
-const ContactCard = ({ icon, title, info }) => {
+const ContactCard = ({ icon, title, info, index, isVisible }) => {
   return (
-    <div className="text-center p-8 bg-white rounded-2xl shadow-lg">
-      <div className="text-blue-600 mx-auto mb-4 flex justify-center">
+    <div 
+      className={`text-center p-6 bg-white/80 backdrop-blur-sm rounded-2xl transform transition-all duration-500 hover:scale-105 hover:shadow-lg ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+      }`}
+      style={{ transitionDelay: `${index * 150}ms` }}
+    >
+      <div className="w-12 h-12 bg-gradient-to-r from-[#4f46e5] to-[#3b82f6] rounded-xl flex items-center justify-center text-white mx-auto mb-4">
         {icon}
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-      <div className="text-gray-600">{info}</div>
+      <h3 className="text-lg font-semibold text-slate-800 mb-2">{title}</h3>
+      <div className="text-slate-600">{info}</div>
     </div>
   );
 };
 
 // Contact Section Component
 const ContactSection = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const element = document.getElementById('contact');
+    if (element) observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+    <section id="contact" className="py-20 px-6 bg-gradient-to-br from-slate-50 to-blue-50/30">
+      <div className="max-w-6xl mx-auto">
+        <div className={`text-center mb-12 transform transition-all duration-700 ${
+          isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+        }`}>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
             Get in Touch
           </h2>
-          <p className="text-xl text-gray-600">
-            Ready to transform hospital's operations? Contact us today.
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Ready to transform your hospital's operations? Contact us today.
           </p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           <ContactCard 
-            icon={<Phone className="w-12 h-12" />}
+            icon={<Phone className="w-6 h-6" />}
             title="Call Us"
             info="+1 (555) 123-4567"
+            index={0}
+            isVisible={isVisible}
           />
           <ContactCard 
-            icon={<Mail className="w-12 h-12" />}
+            icon={<Mail className="w-6 h-6" />}
             title="Email Us"
-            info="hello@medly.com"
+            info="hello@hospital.com"
+            index={1}
+            isVisible={isVisible}
           />
           <ContactCard 
-            icon={<MapPin className="w-12 h-12" />}
+            icon={<MapPin className="w-6 h-6" />}
             title="Visit Us"
             info={<>123 Healthcare Ave<br />Medical District, NY 10001</>}
+            index={2}
+            isVisible={isVisible}
           />
         </div>
       </div>
@@ -260,40 +406,42 @@ const ContactSection = () => {
 // Footer Component
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <footer className="bg-slate-900 text-white py-16 px-6">
+      <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="col-span-2">
-            <div className="flex items-center space-x-2 mb-4 w-20">
+            <div className="flex items-center space-x-3 mb-6">
+   <div className="flex items-center space-x-2 mb-4 w-20">
               <img src={LogoWhite} alt="Logo" className="w-full h-full object-contain" />
             </div>
-            <p className="text-gray-400 mb-4 max-w-md">
+            </div>
+            <p className="text-slate-400 leading-relaxed max-w-md">
               Streamlining hospital administration with cutting-edge technology and unparalleled support.
             </p>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Services</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>Staff Management</li>
-              <li>Financial Operations</li>
-              <li>Compliance Monitoring</li>
-              <li>Analytics & Reporting</li>
+            <h3 className="text-lg font-semibold mb-4 text-white">Services</h3>
+            <ul className="space-y-2 text-slate-400">
+              <li className="hover:text-white transition-colors cursor-pointer">Staff Management</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Financial Operations</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Compliance Monitoring</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Analytics & Reporting</li>
             </ul>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Company</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>About Us</li>
-              <li>Careers</li>
-              <li>Privacy Policy</li>
-              <li>Terms of Service</li>
+            <h3 className="text-lg font-semibold mb-4 text-white">Company</h3>
+            <ul className="space-y-2 text-slate-400">
+              <li className="hover:text-white transition-colors cursor-pointer">About Us</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Careers</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Privacy Policy</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Terms of Service</li>
             </ul>
           </div>
         </div>
         
-        <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+        <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
           <p>&copy; 2025 Medly. All rights reserved.</p>
         </div>
       </div>
@@ -301,46 +449,18 @@ const Footer = () => {
   );
 };
 
-// Main Component
-export default function LandingPage() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [animateStats, setAnimateStats] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.target.id === 'stats') {
-            setAnimateStats(true);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-    
-    const statsElement = document.getElementById('stats');
-    if (statsElement) observer.observe(statsElement);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      observer.disconnect();
-    };
-  }, []);
-
+// Main Landing Page Component
+const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen">
       <HeroSection />
-      <StatsSection animateStats={animateStats} />
+      <StatsSection />
       <FeaturesSection />
       <BenefitsSection />
       <ContactSection />
       <Footer />
     </div>
   );
-}
+};
+
+export default LandingPage;
