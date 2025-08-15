@@ -33,15 +33,14 @@ const HeroSection = () => {
           }`}
         >
           <h1 className="font-bold text-5xl md:text-7xl leading-tight text-white mb-6 drop-shadow-lg">
-            Streamline Hospital
+            The Future of Secure
             <span className="block bg-gradient-to-br from-[#c0e5ff] to-[#b7e7ff] bg-clip-text text-transparent drop-shadow-lg">
-              Operations
+              Healthcare Records
             </span>
           </h1>
 
           <p className="text-xl text-white/90 max-w-3xl mx-auto mb-10 leading-relaxed drop-shadow-sm font-medium">
-            Transform your hospital's administrative processes with comprehensive management. 
-            Reduce costs, improve efficiency, and focus on patient care.
+            Securely manage hospital records with decentralized EMR. Ensure transparency, interoperability, and patient-owned healthcare data.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
@@ -178,12 +177,12 @@ const FeaturesSection = () => {
     {
       icon: <Shield className="w-6 h-6" />,
       title: "HIPAA Compliant Security",
-      description: "Bank-level encryption and security protocols to protect sensitive patient data and administrative information."
+      description: "Bank-level encryption and ICP-backed protocols to safeguard sensitive medical and administrative data."
     },
     {
       icon: <Users className="w-6 h-6" />,
-      title: "Staff Management",
-      description: "Streamline scheduling, payroll, and HR processes with automated workflows and real-time updates."
+      title: "Patient-Centered Data Ownership",
+      description: "SEmpower patients with full transparency and control over their medical history."
     },
     {
       icon: <BarChart3 className="w-6 h-6" />,
@@ -223,7 +222,7 @@ const FeaturesSection = () => {
             Powerful Features for Modern Healthcare
           </h2>
           <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-            Our comprehensive platform provides everything you need to manage hospital's administrative operations efficiently and securely.
+           Our comprehensive platform provides secure, decentralized tools to manage hospital operations and medical records—improving care while protecting patient data.
           </p>
         </div>
         
@@ -242,12 +241,12 @@ const BenefitsSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   
   const benefits = [
-    "Reduce administrative costs by up to 40%",
-    "Improve staff productivity with automated workflows",
-    "Ensure compliance with healthcare regulations",
-    "Real-time data access and reporting",
-    "Seamless integration with existing systems",
-    "Scalable solutions for hospitals of all sizes"
+    "Secure & tamper-proof medical records powered by blockchain",
+    "Patients retain full ownership and control of their data",
+    "Seamless interoperability across hospitals and healthcare providers",
+    "HIPAA-compliant security with bank-level encryption",
+    "Real-time access to accurate and up-to-date patient information",
+    "Scalable, future-ready solutions built on the ICP blockchain"
   ];
 
   useEffect(() => {
@@ -279,7 +278,7 @@ const BenefitsSection = () => {
               Why Choose Medly?
             </h2>
             <p className="text-lg text-white/90 mb-8 leading-relaxed">
-              Join hundreds of hospitals that have transformed their operations and improved patient care with our platform.
+              Join hospitals across Indonesia that are redefining patient care with secure, decentralized medical records powered by blockchain.
             </p>
             <div className="space-y-4">
               {benefits.map((benefit, index) => (
@@ -371,7 +370,7 @@ const ContactSection = () => {
             Get in Touch
           </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Ready to transform your hospital's operations? Contact us today.
+           Ready to bring the future of healthcare to your hospital? Let’s build secure and interoperable medical records together.
           </p>
         </div>
         
@@ -386,14 +385,14 @@ const ContactSection = () => {
           <ContactCard 
             icon={<Mail className="w-6 h-6" />}
             title="Email Us"
-            info="hello@hospital.com"
+            info="support@medly.id"
             index={1}
             isVisible={isVisible}
           />
           <ContactCard 
             icon={<MapPin className="w-6 h-6" />}
             title="Visit Us"
-            info={<>123 Healthcare Ave<br />Medical District, NY 10001</>}
+            info={<>123 Kesehatan<br />Medical District, NY 10001</>}
             index={2}
             isVisible={isVisible}
           />
@@ -416,17 +415,17 @@ const Footer = () => {
             </div>
             </div>
             <p className="text-slate-400 leading-relaxed max-w-md">
-              Streamlining hospital administration with cutting-edge technology and unparalleled support.
+             Empowering hospitals with blockchain technology, ensuring data security, compliance, and better patient care.
             </p>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white">Services</h3>
             <ul className="space-y-2 text-slate-400">
-              <li className="hover:text-white transition-colors cursor-pointer">Staff Management</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Financial Operations</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Secure EMR Management</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Staff & Access Control</li>
               <li className="hover:text-white transition-colors cursor-pointer">Compliance Monitoring</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Analytics & Reporting</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Data Analytics & Reporting</li>
             </ul>
           </div>
           
