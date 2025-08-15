@@ -4,17 +4,21 @@ import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
-import Result "mo:base/Result";
 
 actor MedicalCanister {
 
+  // Hospital baru
   type Hospital = {
     id: Nat;
     name: Text;
     logoURL: Text;
     walletAddress: Principal;
     isActive: Bool;
+    createdAt: Int; //New
+    updatedAt: Int;    
+    expiredAt: ?Int; 
   }; 
+
 
   type Profile = {
     id:Nat;
@@ -66,27 +70,40 @@ actor MedicalCanister {
     createdAt: Int;
   };
 
-  stable var hospitals: [Hospital] = [];
+  stable var hospitals : [Hospital] = []; // New version
   stable var doctors: [Doctor] = [];
   stable var profiles: [Profile] = [];
   stable var medicalRecords: [MedicalRecord] = [];
   stable var doctorSchedules: [DoctorSchedule] = []; // New
+  stable var migrationCompleted : Bool = false;
 
   stable var hospitalCounter: Nat = 0;
   stable var profileCounter: Nat = 0; // New
   stable var doctorCounter: Nat = 0;
   stable var recordCounter: Nat = 0;
   stable var scheduleCounter: Nat = 0; // New
+  let nowInSec = Time.now() / 1_000_000_000; // second
 
   // Existing hospital functions...
-  public shared({caller}) func registerHospital(name: Text, logoURL: Text) : async Text {
+  public shared({caller}) func registerHospital(name: Text, logoURL: Text, plan: Text) : async Text {
+    // Duration Day null == lifetime
     hospitalCounter += 1;
+    let nowInSec = Time.now() / 1_000_000_000; // second
+    let expiredAt : ?Int = switch (plan) {
+      case ("monthly") { ?(nowInSec + 30 * 86_400) };
+      case ("yearly") { ?(nowInSec + 365 * 86_400) };
+      case ("lifetime") { null };
+      case (_) { null }; // default fallback
+    };
     let newHospital : Hospital = {
       id = hospitalCounter;
       name = name;
       logoURL = logoURL;
       walletAddress = caller;
       isActive = true;
+      createdAt = nowInSec; // New
+      updatedAt = nowInSec;
+      expiredAt;
     };
     hospitals := Array.append(hospitals, [newHospital]);
     return "Hospital registered with ID: " # Nat.toText(newHospital.id);
@@ -239,7 +256,7 @@ actor MedicalCanister {
           cpptURL = cpptURL;
           evidenceURLs = evidenceURLs;
           prescriptions = prescriptions;
-          createdAt = Time.now() : Int;
+          createdAt = Time.now() / 1_000_000_000; //seconds
         };
         medicalRecords := Array.append(medicalRecords, [newRecord]);
         return "Medical record added with ID: " # Nat.toText(newRecord.id);
@@ -274,6 +291,7 @@ actor MedicalCanister {
   public query func getHospitals() : async [Hospital] {
     hospitals;
   };
+
 
   public query func getDoctors() : async [Doctor] {
     doctors;

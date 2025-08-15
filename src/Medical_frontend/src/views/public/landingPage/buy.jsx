@@ -227,13 +227,14 @@ const Buy = () => {
       }
 
       // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Register hospital with IPFS logo URL
       console.log('Registering hospital with logo URL:', logoUrl);
       const result = await actor.registerHospital(
         formData.hospitalName.trim(),
-        logoUrl
+        logoUrl,
+        selectedPlan,
       );
       console.log('Registration result:', result);
       

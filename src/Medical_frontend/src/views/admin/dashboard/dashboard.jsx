@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ArrowLeft, RefreshCw, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ClockAlert, ArrowLeft, RefreshCw, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { getPrincipal, getActor, isAuthenticated } from '../../../service/auth';
+import { getRemainingTime } from '../../../components_global/time'
 
 const Adashboard = () => {
   const [currentView, setCurrentView] = useState('hospitals');
@@ -880,6 +881,21 @@ const Adashboard = () => {
                   <span className="text-2xl font-bold text-slate-800">
                     {medicalRecords.length}
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-xl flex items-center justify-center">
+                      <ClockAlert className="w-5 h-5 text-red-600" />
+                    </div>
+                    <span className="font-medium text-slate-700">Expired</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-bold text-slate-800">
+                      {getRemainingTime(selectedHospital.expiredAt)}
+                    </span>
+                    <div className="text-sm font-medium text-slate-600 -mt-1">months left</div>
+                  </div>
                 </div>
               </div>
             </div>

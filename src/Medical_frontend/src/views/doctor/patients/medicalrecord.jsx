@@ -15,6 +15,7 @@ import {
   CloudArrowUpIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
+import { formatDate } from '../../../components_global/time'
 
 const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY;
 const PINATA_API_SECRET = import.meta.env.VITE_PINATA_API_SECRET;
@@ -522,17 +523,6 @@ const MedicalRecord = () => {
   const getDoctorName = (doctorId) => {
     const doctor = doctors.find((d) => Number(d.id) === Number(doctorId));
     return doctor ? doctor.name : 'Unknown Doctor';
-  };
-
-  const formatDate = (timestamp) => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   const filteredRecords = medicalRecords.filter((record) => {
