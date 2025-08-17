@@ -15,9 +15,9 @@ actor MedicalCanister {
     walletAddress: Principal;
     isActive: Bool;
     createdAt: Int; //New
-    updatedAt: Int;    
+    updatedAt: Int;
     expiredAt: ?Int; 
-  }; 
+  };
 
 
   type Profile = {
@@ -82,17 +82,16 @@ actor MedicalCanister {
   stable var doctorCounter: Nat = 0;
   stable var recordCounter: Nat = 0;
   stable var scheduleCounter: Nat = 0; // New
-  let nowInSec = Time.now() / 1_000_000_000; // second
 
   // Existing hospital functions...
-  public shared({caller}) func registerHospital(name: Text, logoURL: Text, plan: Text) : async Text {
+  public shared({caller}) func registerHospital(name: Text, logoURL: Text,plan:Text) : async Text {
     // Duration Day null == lifetime
     hospitalCounter += 1;
     let nowInSec = Time.now() / 1_000_000_000; // second
     let expiredAt : ?Int = switch (plan) {
-      case ("monthly") { ?(nowInSec + 30 * 86_400) };
-      case ("yearly") { ?(nowInSec + 365 * 86_400) };
-      case ("lifetime") { null };
+      case ("monthly") { ?(nowInSec + 30 * 86_400) }; // 30 days / a month
+      case ("yearly") { ?(nowInSec + 365 * 86_400) }; // 365 days / a year
+      case ("lifetime") { null }; // forever
       case (_) { null }; // default fallback
     };
     let newHospital : Hospital = {
@@ -108,15 +107,43 @@ actor MedicalCanister {
     hospitals := Array.append(hospitals, [newHospital]);
     return "Hospital registered with ID: " # Nat.toText(newHospital.id);
   };
-
+  // Deactivate hospital by caller
   public shared({caller}) func deactivateHospital(hospitalId: Nat) : async Text {
-    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) : Hospital {
+    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
       if (h.id == hospitalId and h.walletAddress == caller) {
         { h with isActive = false }
       } else { h }
     });
-    return "Hospital deactivated";
+    "Hospital deactivated"
   };
+// Deactivate hospital if expired (only hospital owner can trigger)
+public shared({caller}) func deactivateHospitalIfExpired(id: Nat) : async Bool {
+  let nowInSec : Int = Time.now() / 1_000_000_000;
+  var found : Bool = false;
+
+  hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+    if (h.id == id and h.walletAddress == caller) {
+      switch (h.expiredAt) {
+        case (null) { 
+          h   // lifetime, tidak perlu update 
+        };
+        case (?exp) {
+          if (exp < nowInSec) {
+            found := true;
+            { h with isActive = false }
+          } else {
+            h
+          }
+        };
+      }
+    } else {
+      h
+    }
+  });
+
+  return found;
+};
+
 
   // Existing doctor functions...
   public shared({caller}) func registerDoctor(hospitalId: Nat, name: Text, specialty: Text, photoURL: Text, doctorWallet: Principal) : async Text {
@@ -288,10 +315,11 @@ actor MedicalCanister {
   };
 
   // Query functions
+  
+  // Hospital Query
   public query func getHospitals() : async [Hospital] {
     hospitals;
   };
-
 
   public query func getDoctors() : async [Doctor] {
     doctors;

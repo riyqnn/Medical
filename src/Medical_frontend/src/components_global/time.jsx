@@ -11,10 +11,11 @@ export const getRemainingTime = (expiredAt) => {
   }
 
   const months = Math.floor(diffSec / 86400 / 30);
+  const days = Math.floor(diffSec / 86400 );
   const hours = Math.floor((diffSec % 86400) / 3600);
   const minutes = Math.floor((diffSec % 3600) / 60);
 
-  return months;
+  return days;
 };
 
 export const formatDate = (timestamp) => {

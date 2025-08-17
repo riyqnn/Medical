@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ClockAlert, ArrowLeft, RefreshCw, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { getPrincipal, getActor, isAuthenticated } from '../../../service/auth';
+import { singleHospitalExpirationCheck } from '../../../service/hospitalExpiration';
 import { getRemainingTime } from '../../../components_global/time'
 
 const Adashboard = () => {
@@ -231,22 +232,32 @@ const Adashboard = () => {
       setError('Access denied. You are not registered for this hospital.');
       return;
     }
+    const hospitalIsExpired = await singleHospitalExpirationCheck(hospital,actor);
     setLoading(true);
     setSelectedHospital(hospital);
-    try {
-      const stats = await getHospitalStats(Number(hospital.id));
-      setSelectedHospital(prev => ({ ...prev, stats }));
-      const allRecords = [];
-      console.log('actor before fetchMedicalRecordsHospitalID:', actor);
+    console.log("ini hospital", hospital)
+    // If the Hospital subs is not expired
+    if (!hospitalIsExpired) {
+      try {
+        const stats = await getHospitalStats(Number(hospital.id));
+        setSelectedHospital(prev => ({ ...prev, stats }));
 
-      const recordsByHospitalId = await fetchMedicalRecordsHospitalID(Number(hospital.id),0,5);
-      setMedicalRecords(recordsByHospitalId);
-      console.log(recordsByHospitalId,Number(hospital.id))
-      setCurrentView('dashboard');
-      setError(null);
-    } catch (err) {
-      setError('Failed to load hospital data: ' + err.message);
-    } finally {
+        const allRecords = [];
+        console.log('actor before fetchMedicalRecordsHospitalIDD:', actor);
+
+        const recordsByHospitalId = await fetchMedicalRecordsHospitalID(Number(hospital.id),0,5);
+        setMedicalRecords(recordsByHospitalId);
+        console.log(recordsByHospitalId,Number(hospital.id))
+        setCurrentView('dashboard');
+        setError(null);
+      } catch (err) {
+        setError('Failed to load hospital data: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    else{
+      setError('Failed to load hospital data, expired:');
       setLoading(false);
     }
   };
@@ -894,7 +905,7 @@ const Adashboard = () => {
                     <span className="text-2xl font-bold text-slate-800">
                       {getRemainingTime(selectedHospital.expiredAt)}
                     </span>
-                    <div className="text-sm font-medium text-slate-600 -mt-1">months left</div>
+                    <div className="text-sm font-medium text-slate-600 -mt-1">days left</div>
                   </div>
                 </div>
               </div>
