@@ -84,11 +84,12 @@ actor MedicalCanister {
   stable var scheduleCounter: Nat = 0; // New
 
   // Existing hospital functions...
-  public shared({caller}) func registerHospital(name: Text, logoURL: Text,plan:Text) : async Text {
+  public shared({caller}) func registerHospital(name: Text, logoURL: Text,plan:Text) : async Text { //for testing
     // Duration Day null == lifetime
     hospitalCounter += 1;
     let nowInSec = Time.now() / 1_000_000_000; // second
     let expiredAt : ?Int = switch (plan) {
+      case ("trial") { ?(nowInSec + 15 * 60) }; // 15 Minutes
       case ("monthly") { ?(nowInSec + 30 * 86_400) }; // 30 days / a month
       case ("yearly") { ?(nowInSec + 365 * 86_400) }; // 365 days / a year
       case ("lifetime") { null }; // forever
@@ -107,42 +108,103 @@ actor MedicalCanister {
     hospitals := Array.append(hospitals, [newHospital]);
     return "Hospital registered with ID: " # Nat.toText(newHospital.id);
   };
-  // Deactivate hospital by caller
-  public shared({caller}) func deactivateHospital(hospitalId: Nat) : async Text {
+
+  // Toggle active status for single hospital
+  public shared({caller}) func toggleHospitalActiveStatus(hospitalId: Nat, plan: Text) : async Text {
+    let nowInSec = Time.now() / 1_000_000_000;
+    var toggled = false;
+
     hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
       if (h.id == hospitalId and h.walletAddress == caller) {
-        { h with isActive = false }
-      } else { h }
-    });
-    "Hospital deactivated"
-  };
-// Deactivate hospital if expired (only hospital owner can trigger)
-public shared({caller}) func deactivateHospitalIfExpired(id: Nat) : async Bool {
-  let nowInSec : Int = Time.now() / 1_000_000_000;
-  var found : Bool = false;
+        toggled := true;
 
-  hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
-    if (h.id == id and h.walletAddress == caller) {
-      switch (h.expiredAt) {
-        case (null) { 
-          h   // lifetime, tidak perlu update 
-        };
-        case (?exp) {
-          if (exp < nowInSec) {
-            found := true;
-            { h with isActive = false }
+        // Tentukan status baru
+        let newIsActive = not h.isActive;
+
+        // Kalau aktif → hitung expiredAt pakai plan dari parameter
+        let newExpiredAt : ?Int =
+          if (newIsActive) {
+            switch (plan) {
+              case ("monthly") { ?(nowInSec + 30 * 86_400) }; // 30 hari
+              case ("yearly") { ?(nowInSec + 365 * 86_400) }; // 365 hari
+              case ("lifetime") { null }; // selamanya
+              case (_) { null }; // fallback
+            }
           } else {
-            h
-          }
-        };
-      }
-    } else {
-      h
-    }
-  });
+            null
+          };
 
-  return found;
-};
+        { h with 
+          isActive = newIsActive;
+          updatedAt = nowInSec;
+          expiredAt = newExpiredAt
+        }
+      } else {
+        h
+      }
+    });
+
+    if (toggled) {
+      return "Hospital status toggled successfully";
+    } else {
+      return "Unauthorized or hospital not found";
+    }
+  };
+
+  // Deactivate hospital if expired (only hospital owner can trigger)
+  public shared({caller}) func deactivateHospitalIfExpired(id: Nat) : async Bool {
+    let nowInSec : Int = Time.now() / 1_000_000_000;
+    var found : Bool = false;
+
+    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+      if (h.id == id and h.walletAddress == caller) {
+        switch (h.expiredAt) {
+          case (null) { 
+            h   // lifetime, tidak perlu update 
+          };
+          case (?exp) {
+            if (exp < nowInSec) {
+              found := true;
+              { h with isActive = false }
+            } else {
+              h
+            }
+          };
+        }
+      } else {
+        h
+      }
+    });
+
+    return found;
+  };
+
+  // Deactivate hospitals in batch if expired (only owner can trigger)
+  public shared({caller}) func deactivateHospitalsIfExpired(ids: [Nat]) : async [Nat] {
+    let nowInSec : Int = Time.now() / 1_000_000_000;
+    var deactivated : [Nat] = [];
+
+    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+      if (Array.find<Nat>(ids, func (id) { id == h.id }) != null
+          and h.walletAddress == caller) {
+        switch (h.expiredAt) {
+          case (null) { h };
+          case (?exp) {
+            if (exp < nowInSec) {
+              deactivated := Array.append<Nat>(deactivated, [h.id]);
+              { h with isActive = false }
+            } else {
+              h
+            }
+          };
+        }
+      } else {
+        h
+      }
+    });
+
+    return deactivated; // return the hospital id
+  };
 
 
   // Existing doctor functions...

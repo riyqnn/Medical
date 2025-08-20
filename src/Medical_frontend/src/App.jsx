@@ -3,7 +3,7 @@ import LandingPage from './views/public/landingPage/page';
 import DoctorLayout from './views/doctor/docLayout';
 import Dashboard from './views/doctor/dashboard/dashboard';
 import Buy from './views/public/landingPage/buy'
-import AdminDashboard from './views/admin/dashboard/dashboard'
+import ADashboard from './views/admin/dashboard/dashboard'
 import AdminLayout from './views/admin/adminLayout';
 import Doctors from './views/admin/doctor/Doctors'
 import MedicalRecord from './views/doctor/patients/medicalrecord';
@@ -33,7 +33,7 @@ function App() {
         {/* Anda bisa menambahkan route lain di sini, misal untuk login */}
         {/* <Route path="/login" element={<LoginPage />} /> */}
          <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
+          <Route index element={<ADashboard />} />
           <Route path="doctors" element={<Doctors />} />
         </Route>
 

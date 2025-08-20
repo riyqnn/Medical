@@ -25,7 +25,7 @@ export const singleHospitalExpirationCheck = async (hospital, actor) => {
   // Only call backend if frontend thinks it's expired AND hospital is still active
   if (hospital.isActive) {
     try {
-      console.log("Jalan Guyss")
+      console.log("Deactivate Hospital : ",hospital.id)
       return await actor.deactivateHospitalIfExpired(Number(hospital.id));
     } catch (error) {
       console.error('Backend expiration check failed:', error);
@@ -34,4 +34,43 @@ export const singleHospitalExpirationCheck = async (hospital, actor) => {
   }
   
   return true; // Expired and already inactive
+};
+
+
+export const multipleHospitalExpirationCheckBatch = async (hospitals, actor) => {
+  if (!Array.isArray(hospitals) || hospitals.length === 0) {
+    return [];
+  }
+
+  const expiredCandidates = hospitals.filter((h) => isHospitalExpired(h) && h.isActive);
+
+  // If there are no expired hospital
+  if (expiredCandidates.length === 0) {
+    return hospitals.map((h) => ({ ...h, expired: isHospitalExpired(h) }));
+  }
+
+  try {
+    let deactivatedIds = [];
+
+    if (expiredCandidates.length === 1) {
+      const h = expiredCandidates[0];
+      const result = await actor.deactivateHospitalIfExpired(Number(h.id));
+      if (result) {
+        deactivatedIds = [Number(h.id)];
+      }
+    } else {
+      const ids = expiredCandidates.map((h) => Number(h.id));
+      deactivatedIds = await actor.deactivateHospitalsIfExpired(ids);
+    }
+
+    // Update Results
+    return hospitals.map((h) => ({
+      ...h,
+      expired: deactivatedIds.includes(Number(h.id)) || isHospitalExpired(h),
+    }));
+  } catch (error) {
+    console.error("Backend batch check gagal:", error);
+    // fallback
+    return hospitals.map((h) => ({ ...h, expired: isHospitalExpired(h) }));
+  }
 };

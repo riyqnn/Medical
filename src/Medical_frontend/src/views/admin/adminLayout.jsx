@@ -7,6 +7,7 @@ import {
   Squares2X2Icon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline'
+import { HospitalProvider, useHospitals } from "@/context/hospitalContext";
 
 function AdminLayout() {
   const [authState, setAuthState] = useState({
@@ -89,21 +90,23 @@ function AdminLayout() {
 
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header
-          principal={authState.principal}
-          isConnecting={authState.isLoading}
-          onConnectWallet={handleConnectWallet}
-          onDisconnectWallet={handleDisconnectWallet}
-        />
-        <main className="flex-1 p-6">
-          {/* Halaman seperti Dashboard & Patients akan muncul di sini */}
-          <Outlet />
-        </main>
+    <HospitalProvider actor={authState.actor} principal={authState.principal}>
+      <div className="flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Header
+            principal={authState.principal}
+            isConnecting={authState.isLoading}
+            onConnectWallet={handleConnectWallet}
+            onDisconnectWallet={handleDisconnectWallet}
+          />
+          <main className="flex-1 p-6">
+            {/* Halaman seperti Dashboard & Patients akan muncul di sini */}
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </HospitalProvider>
   );
 }
 

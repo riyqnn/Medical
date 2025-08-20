@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ClockAlert, ArrowLeft, RefreshCw, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, Activity, FileText, Calendar, Building2, ChevronRight, ClockAlert, ArrowLeft, Zap, RefreshCw, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { getPrincipal, getActor, isAuthenticated } from '../../../service/auth';
 import { singleHospitalExpirationCheck } from '../../../service/hospitalExpiration';
 import { getRemainingTime } from '../../../components_global/time'
+import { SubscriptionModal } from '../components/subscriptionModal'
+import { useHospitals } from "@/context/hospitalContext";
 
 const Adashboard = () => {
   const [currentView, setCurrentView] = useState('hospitals');
   const [selectedHospital, setSelectedHospital] = useState(null);
-  const [hospitals, setHospitals] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,9 +17,11 @@ const Adashboard = () => {
   const [principal, setPrincipal] = useState(null);
   const [actor, setActor] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
-
+  const [modalHospital, setModalHospital] = useState(null); // Track which hospital's modal is open
   // Pinata configuration
   const PINATA_GATEWAY = import.meta.env.VITE_PINATA_GATEWAY;
+  const { hospitals, loading: hospitalsLoading, error: hospitalsError } = useHospitals();
+  console.log('uhuy, ini hospitals : ',hospitals);
 
   // Initialize auth data
   useEffect(() => {
@@ -76,21 +79,6 @@ const Adashboard = () => {
 
   const toggleSortOrder = () => {
     setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'));
-  };
-
-  // Fetch hospitals from canister
-  const fetchHospitals = async () => {
-    try {
-      if (!actor) return;
-      setLoading(true);
-      const result = await actor.getHospitals();
-      setHospitals(result || []);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch hospitals: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   // Fetch doctors from canister
@@ -173,7 +161,7 @@ const Adashboard = () => {
         return;
       }
       try {
-        await fetchHospitals();
+        console.log("fetch doctors")
         await fetchDoctors();
       } catch (err) {
         setError('Failed to initialize dashboard: ' + err.message);
@@ -187,7 +175,6 @@ const Adashboard = () => {
     if (hospitals.length > 0 && principal && actor) {
       const interval = setInterval(async () => {
         try {
-          await fetchHospitals();
           await fetchDoctors();
           setLastUpdate(new Date());
         } catch (err) {
@@ -490,6 +477,27 @@ const Adashboard = () => {
     );
   }
 
+  const handleCardClick = () => {
+    if (hasAccess && isActive && onHospitalSelect) {
+      onHospitalSelect(hospital);
+    }
+  };
+
+
+  const handleSubscribe = async (hospitalId,plan) => {
+    console.log(`Subscribed ${plan} with ID ${hospitalId}`);
+    try{
+      if (!actor) return;
+      const result = await actor.toggleHospitalActiveStatus(hospitalId,plan);
+      setError(result);
+    }
+    catch(err){
+      console.error(err)
+    }
+  };
+
+
+
   // Hospitals List View
   const HospitalsView = () => (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">
@@ -542,14 +550,22 @@ const Adashboard = () => {
 
         {/* Hospitals Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          {hospitals.filter(hospital => hospital.isActive).map((hospital) => {
+          {hospitals.map((hospital) => {
             const hasAccess = checkHospitalAccess(hospital);
             const hospitalDoctors = doctors.filter(d => Number(d.hospitalId) === Number(hospital.id));
             const activeDoctors = hospitalDoctors.filter(d => d.isActive);
+            const walletAddress = hospital.walletAddress?.toText 
+              ? hospital.walletAddress.toText()
+              : hospital.walletAddress?.toString();
+            const truncatedWallet = walletAddress 
+              ? `${walletAddress.slice(0, 12)}...${walletAddress.slice(-8)}`
+              : '';
 
-            return (
+            // Render hospital card based on active status
+            return hospital.isActive ? (
+              // ACTIVE HOSPITAL CARD
               <div
-                key={Number(hospital.id)}
+                key={`active-${hospital.id}`}
                 className={`bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/30 transition-all duration-300 ${
                   hasAccess 
                     ? 'hover:bg-white/80 hover:shadow-2xl cursor-pointer hover:-translate-y-2 hover:border-[#A2F2EF]/30' 
@@ -557,51 +573,55 @@ const Adashboard = () => {
                 }`}
                 onClick={() => hasAccess && handleHospitalSelect(hospital)}
               >
-                <div className="flex items-start space-x-6 mb-6">
-                  <HospitalLogo logoURL={hospital.logoURL} hospitalName={hospital.name} />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-bold text-slate-800 mb-2 truncate">{hospital.name}</h3>
-                    <div className="flex items-center space-x-6 text-slate-600 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-5 h-5" />
-                        <span className="font-semibold">{hospitalDoctors.length}</span>
-                        <span className="text-sm">doctors</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Activity className="w-5 h-5 text-green-500" />
-                        <span className="font-semibold">{activeDoctors.length}</span>
-                        <span className="text-sm">active</span>
-                      </div>
-                    </div>
-                  </div>
-                  {hasAccess && <ChevronRight className="w-6 h-6 text-slate-400" />}
-                </div>
+                <HospitalCardContent 
+                  hospital={hospital}
+                  hasAccess={hasAccess}
+                  hospitalDoctors={hospitalDoctors}
+                  activeDoctors={activeDoctors}
+                  truncatedWallet={truncatedWallet}
+                  isActive={true}
+                />
+              </div>
+            ) : (
+              // INACTIVE HOSPITAL CARD
+              <div 
+                key={`inactive-${hospital.id}`}
+                className="bg-gray-100/80 backdrop-blur-sm rounded-3xl p-8 border border-gray-200 opacity-75 relative"
+              >
+                <HospitalCardContent 
+                  hospital={hospital}
+                  hasAccess={hasAccess}
+                  hospitalDoctors={hospitalDoctors}
+                  activeDoctors={[]}
+                  truncatedWallet={truncatedWallet}
+                  isActive={false}
+                />
                 
-                <div className="space-y-3">
-                  <div className="text-sm text-slate-500 bg-slate-100/50 rounded-xl p-3 truncate">
-                    <span className="font-medium">Wallet:</span> {hospital.walletAddress?.toText ? 
-                      hospital.walletAddress.toText().slice(0, 12) + '...' + hospital.walletAddress.toText().slice(-8) :
-                      hospital.walletAddress?.toString().slice(0, 12) + '...' + hospital.walletAddress?.toString().slice(-8)
-                    }
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${hasAccess ? 'bg-green-400' : 'bg-red-400'}`} />
-                      <span className={`text-sm font-semibold ${hasAccess ? 'text-green-600' : 'text-red-600'}`}>
-                        {hasAccess ? 'Access Granted' : 'Access Denied'}
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-lg font-mono">
-                      #{Number(hospital.id)}
-                    </span>
-                  </div>
+                {/* Activate button for inactive hospitals */}
+                <div className={`flex justify-center mt-3 ${!hasAccess && 'hidden'}`}>
+                  <button
+                    onClick={() => setModalHospital(hospital)}
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span>Activate Hospital</span>
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
-
+        {modalHospital && (
+          <SubscriptionModal
+            isOpen={!!modalHospital}
+            onClose={() => setModalHospital(null)}
+            hospitalName={modalHospital.name}
+            onSubscribe={(selectedPlan) => {
+              handleSubscribe(Number(modalHospital.id),selectedPlan);
+              setModalHospital(null);
+            }}
+          />
+        )}
         {/* Empty State */}
         {!loading && hospitals.length === 0 && (
           <div className="text-center py-20">
@@ -621,6 +641,90 @@ const Adashboard = () => {
       </div>
     </div>
   );
+  const HospitalCardContent = ({ 
+    hospital, 
+    hasAccess, 
+    hospitalDoctors, 
+    activeDoctors, 
+    truncatedWallet,
+    isActive
+  }) => {
+    return (
+      <>
+        <div className="flex items-start space-x-6 mb-6">
+          {/* Hospital logo with inactive overlay if not active */}
+          <div className="relative">
+            <HospitalLogo logoURL={hospital.logoURL} hospitalName={hospital.name} />
+            {!isActive && <div className="absolute inset-0 bg-gray-500/50 rounded-xl"></div>}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h3 className={`text-xl font-bold mb-2 truncate ${
+              isActive ? 'text-slate-800' : 'text-gray-600'
+            }`}>
+              {hospital.name}
+            </h3>
+            
+            {/* Doctors count information */}
+            <div className={`flex items-center space-x-6 mb-3 ${
+              isActive ? 'text-slate-600' : 'text-gray-500'
+            }`}>
+              <div className="flex items-center space-x-2">
+                <Users className="w-5 h-5" />
+                <span className="font-semibold">{hospitalDoctors.length}</span>
+                <span className="text-sm">doctors</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Activity className={`w-5 h-5 ${
+                  isActive ? 'text-green-500' : 'text-gray-400'
+                }`} />
+                <span className="font-semibold">{isActive ? activeDoctors.length : 0}</span>
+                <span className="text-sm">{isActive ? 'active' : 'inactive'}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Show chevron only for active and accessible hospitals */}
+          {isActive && hasAccess && <ChevronRight className="w-6 h-6 text-slate-400" />}
+        </div>
+        
+        {/* Wallet address and status section */}
+        <div className="space-y-3">
+          <div className={`text-sm rounded-xl p-3 truncate ${
+            isActive 
+              ? 'text-slate-500 bg-slate-100/50' 
+              : 'text-gray-500 bg-gray-200/50'
+          }`}>
+            <span className="font-medium">Wallet:</span> {truncatedWallet}
+          </div>
+          
+          <div className="flex items-center justify-between">
+            {/* Status indicator */}
+            <div className="flex items-center space-x-3">
+              <div className={`w-3 h-3 rounded-full ${
+                !isActive ? 'bg-gray-400' : 
+                hasAccess ? 'bg-green-400' : 'bg-red-400'
+              }`} />
+              <span className={`text-sm font-semibold ${
+                !isActive ? 'text-gray-500' : 
+                hasAccess ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {!isActive ? 'Inactive' : hasAccess ? 'Access Granted' : 'Access Denied'}
+              </span>
+            </div>
+            
+            {/* Hospital ID badge */}
+            <span className={`text-xs px-3 py-1 rounded-lg font-mono ${
+              isActive ? 'text-slate-400 bg-slate-100' : 'text-gray-400 bg-gray-200'
+            }`}>
+              #{Number(hospital.id)}
+            </span>
+          </div>
+        </div>
+      </>
+    );
+  };
+
 
   // Hospital Dashboard View
   const DashboardView = () => (
@@ -905,7 +1009,6 @@ const Adashboard = () => {
                     <span className="text-2xl font-bold text-slate-800">
                       {getRemainingTime(selectedHospital.expiredAt)}
                     </span>
-                    <div className="text-sm font-medium text-slate-600 -mt-1">days left</div>
                   </div>
                 </div>
               </div>
