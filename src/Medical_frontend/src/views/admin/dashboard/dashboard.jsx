@@ -4,6 +4,7 @@ import { getPrincipal, getActor, isAuthenticated } from '../../../service/auth';
 import { singleHospitalExpirationCheck } from '../../../service/hospitalExpiration';
 import { getRemainingTime } from '../../../components_global/time'
 import { SubscriptionModal } from '../components/subscriptionModal'
+import { ExtendModal } from '../components/extendModal'
 import { useHospitals } from "@/context/hospitalContext";
 
 const Adashboard = () => {
@@ -17,11 +18,11 @@ const Adashboard = () => {
   const [principal, setPrincipal] = useState(null);
   const [actor, setActor] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
-  const [modalHospital, setModalHospital] = useState(null); // Track which hospital's modal is open
+  const [modalActivateHospital, setModalActivateHospital] = useState(null); // Track activate hospital's modal is open
+  const [modalExtendHospital, setModalExtendHospital] = useState(null); // Track extend hospital's modal is open
   // Pinata configuration
   const PINATA_GATEWAY = import.meta.env.VITE_PINATA_GATEWAY;
   const { hospitals, loading: hospitalsLoading, error: hospitalsError } = useHospitals();
-  console.log('uhuy, ini hospitals : ',hospitals);
 
   // Initialize auth data
   useEffect(() => {
@@ -175,7 +176,6 @@ const Adashboard = () => {
     if (hospitals.length > 0 && principal && actor) {
       const interval = setInterval(async () => {
         try {
-          await fetchDoctors();
           setLastUpdate(new Date());
         } catch (err) {
           console.error('Failed to refresh data:', err);
@@ -263,7 +263,6 @@ const Adashboard = () => {
     }
     setLoading(true);
     try {
-      await fetchHospitals();
       await fetchDoctors();
       if (selectedHospital) {
         const stats = await getHospitalStats(Number(selectedHospital.id));
@@ -449,7 +448,7 @@ const Adashboard = () => {
           <p className="text-slate-600 mb-6 leading-relaxed">Please login with Internet Identity to access your medical dashboard</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+            className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
           >
             Refresh Page
           </button>
@@ -468,7 +467,7 @@ const Adashboard = () => {
           <p className="text-slate-600 mb-6 leading-relaxed">Connecting to the blockchain network...</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+            className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
           >
             Refresh Page
           </button>
@@ -489,6 +488,18 @@ const Adashboard = () => {
     try{
       if (!actor) return;
       const result = await actor.toggleHospitalActiveStatus(hospitalId,plan);
+      setError(result);
+    }
+    catch(err){
+      console.error(err)
+    }
+  };
+
+  const handleExtend = async (hospitalId,plan) => {
+    console.log(`Extend ${plan} with ID ${hospitalId}`);
+    try{
+      if (!actor) return;
+      const result = await actor.extendHospital(hospitalId,plan);
       setError(result);
     }
     catch(err){
@@ -521,7 +532,7 @@ const Adashboard = () => {
               <button
                 onClick={refreshData}
                 disabled={loading}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 transition-all duration-300"
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-semibold hover:shadow-md disabled:opacity-50 transition-all duration-300"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -600,7 +611,7 @@ const Adashboard = () => {
                 {/* Activate button for inactive hospitals */}
                 <div className={`flex justify-center mt-3 ${!hasAccess && 'hidden'}`}>
                   <button
-                    onClick={() => setModalHospital(hospital)}
+                    onClick={() => setModalActivateHospital(hospital)}
                     className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
                   >
                     <Zap className="w-5 h-5" />
@@ -611,14 +622,14 @@ const Adashboard = () => {
             );
           })}
         </div>
-        {modalHospital && (
+        {modalActivateHospital && (
           <SubscriptionModal
-            isOpen={!!modalHospital}
-            onClose={() => setModalHospital(null)}
-            hospitalName={modalHospital.name}
+            isOpen={!!modalActivateHospital}
+            onClose={() => setModalActivateHospital(null)}
+            hospitalName={modalActivateHospital.name}
             onSubscribe={(selectedPlan) => {
-              handleSubscribe(Number(modalHospital.id),selectedPlan);
-              setModalHospital(null);
+              handleSubscribe(Number(modalActivateHospital.id),selectedPlan);
+              setModalActivateHospital(null);
             }}
           />
         )}
@@ -632,7 +643,7 @@ const Adashboard = () => {
             <p className="text-slate-600 mb-8 text-lg">No hospitals are currently registered in the system</p>
             <button
               onClick={refreshData}
-              className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+              className="px-8 py-3 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-2xl font-semibold hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
             >
               Try Again
             </button>
@@ -753,14 +764,29 @@ const Adashboard = () => {
             <button
               onClick={refreshData}
               disabled={loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 transition-all duration-300"
+              className="flex items-center space-x-2 px-2 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-semibold hover:shadow-md disabled:opacity-50 transition-all duration-300"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+            </button>
+            <button
+              onClick={() => setModalExtendHospital(selectedHospital)}
+              className={`${getRemainingTime(selectedHospital.expiredAt) === "Lifetime" ? "hidden " : ""}flex items-center space-x-2 px-2 py-2 bg-gradient-to-r from-[#A2F2EF] to-[#8EEAE7] text-slate-700 rounded-xl font-medium hover:shadow-md disabled:opacity-50 transition-all duration-300`}
+            >
+              <span>Extend Plan</span>
             </button>
           </div>
         </div>
-
+        {modalExtendHospital && (
+          <ExtendModal
+            isOpen={!!modalExtendHospital}
+            onClose={() => setModalExtendHospital(null)}
+            hospitalName={modalExtendHospital.name}
+            onSubscribe={(selectedPlan) => {
+              handleExtend(Number(modalExtendHospital.id),selectedPlan);
+              setModalExtendHospital(null);
+            }}
+          />
+        )}
         {/* Error Message */}
         {error && (
           <div className="mb-8 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6">

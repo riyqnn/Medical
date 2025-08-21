@@ -26,6 +26,7 @@ const Buy = () => {
   const [logoPreviewURL, setLogoPreviewURL] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const hashValue = window.location.hash.substring(1);
 
   // Pinata configuration
   const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY ;
@@ -35,6 +36,15 @@ const Buy = () => {
 
   // Pricing plans (frontend only)
   const pricingPlans = [
+    {
+      id: 'trial',
+      name: 'Trial Plan',
+      price: '0 ICP',
+      duration: '3 Days',
+      features: ['Hospital Registration', 'Basic Features'],
+      popular: false,
+      hidden:true,
+    },
     {
       id: 'monthly',
       name: 'Monthly Plan',
@@ -63,6 +73,10 @@ const Buy = () => {
 
   // Handle logo file changes
   useEffect(() => {
+    console.log('hash value : ',hashValue);
+    if (hashValue === "trial"){
+      setSelectedPlan(hashValue)
+    }
     if (logoFile) {
       const url = URL.createObjectURL(logoFile);
       setLogoPreviewURL(url);
@@ -354,7 +368,7 @@ const Buy = () => {
                 {pricingPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative bg-white rounded-2xl shadow-lg border-2 transition-all cursor-pointer transform hover:scale-105 ${
+                    className={`${plan.hidden && "hidden"} relative bg-white rounded-2xl shadow-lg border-2 transition-all cursor-pointer transform hover:scale-105 ${
                       selectedPlan === plan.id
                         ? 'border-[#A2F2EF] shadow-xl'
                         : plan.popular

@@ -45,7 +45,7 @@ const HeroSection = () => {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <a
-            href="/buy"
+            href="/buy#trial"
             className="px-10 py-4 bg-white text-slate-800 rounded-xl font-semibold hover:bg-white/95 transform hover:scale-105 transition-all duration-200 shadow-xl hover:shadow-2xl inline-block text-center"
           >
             Start Free Trial
@@ -305,9 +305,9 @@ const BenefitsSection = () => {
                 <p className="text-white/80">Experience the difference today</p>
               </div>
               <div className="space-y-3">
-                <button className="w-full bg-white text-[#4f46e5] py-3 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
+                <a href="/buy#trial" className="w-full bg-white text-[#4f46e5] py-3 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200 transform hover:scale-105">
                   Start Your Free Trial
-                </button>
+                </a>
                 <button className="w-full border border-white/30 text-white py-3 rounded-lg font-medium hover:bg-white/10 transition-all duration-200">
                   Request a Demo
                 </button>

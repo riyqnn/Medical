@@ -4,6 +4,7 @@ import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
+import Option "mo:base/Option";
 
 actor MedicalCanister {
 
@@ -89,7 +90,7 @@ actor MedicalCanister {
     hospitalCounter += 1;
     let nowInSec = Time.now() / 1_000_000_000; // second
     let expiredAt : ?Int = switch (plan) {
-      case ("trial") { ?(nowInSec + 15 * 60) }; // 15 Minutes
+      case ("trial") { ?(nowInSec + 3 * 86_400) }; // 3 Days
       case ("monthly") { ?(nowInSec + 30 * 86_400) }; // 30 days / a month
       case ("yearly") { ?(nowInSec + 365 * 86_400) }; // 365 days / a year
       case ("lifetime") { null }; // forever
@@ -149,6 +150,53 @@ actor MedicalCanister {
     } else {
       return "Unauthorized or hospital not found";
     }
+  };
+
+  // Extend Hospital
+  public shared({caller}) func extendHospital(hospitalId: Nat, plan: Text) : async Text {
+    let nowInSec = Time.now() / 1_000_000_000;
+
+    var found = false;
+
+    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+      if (h.id == hospitalId and h.walletAddress == caller) {
+        found := true;
+
+        // Tentukan durasi tambahan
+        if (plan == "lifetime") {
+          { h with updatedAt = nowInSec; expiredAt = null }
+        } else {
+          let extendTime =
+            switch (plan) {
+              case ("monthly") { 30 * 86_400 }; // 30 hari
+              case ("yearly") { 365 * 86_400 }; // 365 hari
+              case (_) { -1 }; // invalid
+            };
+
+          if (extendTime < 0) {
+            // kalau plan invalid, jangan ubah data
+            h
+          } else {
+            // unwrap expiredAt
+            let old = Option.get(h.expiredAt, nowInSec);
+            let newExpired = Int.max(old, nowInSec) + extendTime;
+            { h with updatedAt = nowInSec; expiredAt = ?newExpired }
+          }
+        }
+      } else {
+        h
+      }
+    });
+
+    if (not found) {
+      return "Error: hospital not found or caller is not the owner";
+    };
+
+    if (plan != "monthly" and plan != "yearly" and plan != "lifetime") {
+      return "Error: invalid subscription plan '" # plan # "'";
+    };
+
+    return "Hospital subscription extended successfully";
   };
 
   // Deactivate hospital if expired (only hospital owner can trigger)
