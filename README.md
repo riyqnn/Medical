@@ -29,15 +29,15 @@ By bridging technology with patient-centered care, Medly ensures improved health
 
 ## ✨ Project Insights
 
-- 📝 **Business Overview** – [View File](#)  
-- 🎥 **Demo Video (with Plug Wallet)** – [Watch Video](#)  
+- 📝 ** Pitch deck ** – [View File](#)  
+🎥 **Demo Video ** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)
+
 
 
 ## 🛠 Tech Stack
 
 - 🎨 **Frontend**: ReactJS (JavaScript)  
 - 🧠 **Canister Development**: Motoko  
-- 📚 **Library**: Agent.js  
 - 🔐 **Authentication**: Internet Identity  
 - 💅 **Styling**: TailwindCSS  
 
