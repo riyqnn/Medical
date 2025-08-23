@@ -379,8 +379,8 @@ const Doctors = () => {
       }
 
       const [doctorsResult, hospitalsResult] = await Promise.all([
-        actor.getDoctors(),
-        actor.getHospitals()
+        actor.getDoctorsByPrincipal(),
+        actor.getHospitalsByPrincipal()
       ]);
       
       const normalizedHospitals = hospitalsResult.map(hospital => ({

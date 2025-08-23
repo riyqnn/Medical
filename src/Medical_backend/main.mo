@@ -20,7 +20,6 @@ actor MedicalCanister {
     expiredAt: ?Int; 
   };
 
-
   type Profile = {
     id:Nat;
     name:Text;
@@ -434,6 +433,21 @@ actor MedicalCanister {
   public query func getDoctors() : async [Doctor] {
     doctors;
   };
+
+  public query({caller}) func getHospitalsByPrincipal() : async [Hospital] { 
+    Array.filter<Hospital>(hospitals,func(h){h.walletAddress == caller});
+  };
+
+  public query({caller}) func getDoctorsByPrincipal() : async [Doctor] {
+    let hospitalsId = Array.map<Hospital,Nat>(
+      Array.filter<Hospital>(hospitals,func(h){h.walletAddress == caller}),
+      func(h){h.id}
+    ); //get all hospital according to principal and get only the ID
+
+    Array.filter<Doctor>(doctors,func(d){
+      Array.find<Nat>(hospitalsId, func(hId){hId == d.hospitalId}) != null
+    }) //get all the doctors according to hospital Id from the hospitalsId
+  }; 
 
   public query func getMedicalRecordsByPatient(patientId: Nat) : async [MedicalRecord] {
     Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { r.patientId == patientId });
