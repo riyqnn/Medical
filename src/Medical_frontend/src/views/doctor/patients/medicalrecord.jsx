@@ -237,7 +237,7 @@ const MedicalRecord = () => {
     if (!actor) return;
     
     try {
-      const allRecords = await fetchMedicalRecordsHospitalID(hospitalId, 0, 5);
+      const allRecords = await fetchMedicalRecordsHospitalID(hospitalId, 0, 10);
       setMedicalRecords(allRecords);
       console.log('Medical records initialized. Use search to view specific patient records.');
     } catch (error) {
