@@ -14,8 +14,8 @@ By bridging technology with patient-centered care, Medly ensures improved health
 
 ## ✨ Project Insights
 
-- 📝 ** Pitch deck ** – [View File](#)  
-- 🎥 **Demo Video ** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)
+- 📝 **Pitch deck** – [View File](#)  
+- 🎥 **Demo Video** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)
 
 
 
