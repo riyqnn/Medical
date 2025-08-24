@@ -5,76 +5,15 @@ import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
 import Option "mo:base/Option";
+import Types "./types"
 
 actor MedicalCanister {
 
-  // Hospital baru
-  type Hospital = {
-    id: Nat;
-    name: Text;
-    logoURL: Text;
-    walletAddress: Principal;
-    isActive: Bool;
-    createdAt: Int; //New
-    updatedAt: Int;
-    expiredAt: ?Int; 
-  };
-
-  type Profile = {
-    id:Nat;
-    name:Text;
-    walletAddress: Principal;
-    photoURL:Text;
-    address:Text;    
-  };
-
-  type Doctor = {
-    id: Nat;
-    hospitalId: Nat;
-    name: Text;
-    specialty: Text;
-    walletAddress: Principal;
-    photoURL: Text;
-    isActive: Bool;
-  };
-
-  // New: Doctor Schedule Type
-  type DoctorSchedule = {
-    id: Nat;
-    doctorId: Nat;
-    dayOfWeek: Nat; // 0 = Sunday, 1 = Monday, etc.
-    startTime: Text; // Format: "08:00"
-    endTime: Text;   // Format: "17:00"
-    isAvailable: Bool;
-  };
-
-  // New: Prescription Type (embedded in MedicalRecord)
-  type Prescription = {
-    medicationName: Text;
-    dosage: Text;
-    frequency: Text; // e.g., "3x sehari"
-    duration: Text;  // e.g., "7 hari"
-    instructions: Text; // e.g., "Diminum setelah makan"
-  };
-
-  // Enhanced: MedicalRecord with Prescription
-  type MedicalRecord = {
-    id: Nat;
-    patientId: Nat;
-    doctorId: Nat;
-    hospitalId: Nat;
-    diagnosis: Text;
-    cpptURL: Text;
-    evidenceURLs: [Text];
-    prescriptions: [Prescription]; // New: Array of prescriptions
-    createdAt: Int;
-  };
-
-  stable var hospitals : [Hospital] = []; // New version
-  stable var doctors: [Doctor] = [];
-  stable var profiles: [Profile] = [];
-  stable var medicalRecords: [MedicalRecord] = [];
-  stable var doctorSchedules: [DoctorSchedule] = []; // New
+  stable var hospitals : [Types.Hospital] = []; // New version
+  stable var doctors: [Types.Doctor] = [];
+  stable var profiles: [Types.Profile] = [];
+  stable var medicalRecords: [Types.MedicalRecord] = [];
+  stable var doctorSchedules: [Types.DoctorSchedule] = []; // New
   stable var migrationCompleted : Bool = false;
 
   stable var hospitalCounter: Nat = 0;
@@ -95,7 +34,7 @@ actor MedicalCanister {
       case ("lifetime") { null }; // forever
       case (_) { null }; // default fallback
     };
-    let newHospital : Hospital = {
+    let newHospital : Types.Hospital = {
       id = hospitalCounter;
       name = name;
       logoURL = logoURL;
@@ -114,7 +53,7 @@ actor MedicalCanister {
     let nowInSec = Time.now() / 1_000_000_000;
     var toggled = false;
 
-    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+    hospitals := Array.map<Types.Hospital, Types.Hospital>(hospitals, func (h) {
       if (h.id == hospitalId and h.walletAddress == caller) {
         toggled := true;
 
@@ -157,7 +96,7 @@ actor MedicalCanister {
 
     var found = false;
 
-    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+    hospitals := Array.map<Types.Hospital, Types.Hospital>(hospitals, func (h) {
       if (h.id == hospitalId and h.walletAddress == caller) {
         found := true;
 
@@ -203,7 +142,7 @@ actor MedicalCanister {
     let nowInSec : Int = Time.now() / 1_000_000_000;
     var found : Bool = false;
 
-    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+    hospitals := Array.map<Types.Hospital, Types.Hospital>(hospitals, func (h) {
       if (h.id == id and h.walletAddress == caller) {
         switch (h.expiredAt) {
           case (null) { 
@@ -231,7 +170,7 @@ actor MedicalCanister {
     let nowInSec : Int = Time.now() / 1_000_000_000;
     var deactivated : [Nat] = [];
 
-    hospitals := Array.map<Hospital, Hospital>(hospitals, func (h) {
+    hospitals := Array.map<Types.Hospital, Types.Hospital>(hospitals, func (h) {
       if (Array.find<Nat>(ids, func (id) { id == h.id }) != null
           and h.walletAddress == caller) {
         switch (h.expiredAt) {
@@ -256,12 +195,12 @@ actor MedicalCanister {
 
   // Existing doctor functions...
   public shared({caller}) func registerDoctor(hospitalId: Nat, name: Text, specialty: Text, photoURL: Text, doctorWallet: Principal) : async Text {
-    let isAuthorized = Array.find<Hospital>(hospitals, func (h) : Bool { h.id == hospitalId and h.walletAddress == caller });
+    let isAuthorized = Array.find<Types.Hospital>(hospitals, func (h) : Bool { h.id == hospitalId and h.walletAddress == caller });
     if (isAuthorized == null) {
       return "Unauthorized: Only hospital owner can register doctor";
     };
     doctorCounter += 1;
-    let newDoctor : Doctor = {
+    let newDoctor : Types.Doctor = {
       id = doctorCounter;
       hospitalId = hospitalId;
       name = name;
@@ -275,15 +214,15 @@ actor MedicalCanister {
   };
 
   public shared({caller}) func deactivateDoctor(doctorId: Nat) : async Text {
-    let doctorOpt = Array.find<Doctor>(doctors, func (d) : Bool { d.id == doctorId });
+    let doctorOpt = Array.find<Types.Doctor>(doctors, func (d) : Bool { d.id == doctorId });
     switch (doctorOpt) {
       case null return "Doctor not found";
       case (?doctor) {
-        let isAuthorized = Array.find<Hospital>(hospitals, func (h) : Bool { h.id == doctor.hospitalId and h.walletAddress == caller });
+        let isAuthorized = Array.find<Types.Hospital>(hospitals, func (h) : Bool { h.id == doctor.hospitalId and h.walletAddress == caller });
         if (isAuthorized == null) {
           return "Unauthorized: Only hospital owner can deactivate doctor";
         };
-        doctors := Array.map<Doctor, Doctor>(doctors, func (d) : Doctor {
+        doctors := Array.map<Types.Doctor, Types.Doctor>(doctors, func (d) : Types.Doctor {
           if (d.id == doctorId) { { d with isActive = false } } else { d }
         });
         return "Doctor deactivated";
@@ -299,12 +238,12 @@ actor MedicalCanister {
     endTime: Text
   ) : async Text {
     // Verify caller is the doctor or hospital owner
-    let doctorOpt = Array.find<Doctor>(doctors, func (d) : Bool { d.id == doctorId });
+    let doctorOpt = Array.find<Types.Doctor>(doctors, func (d) : Bool { d.id == doctorId });
     switch (doctorOpt) {
       case null return "Doctor not found";
       case (?doctor) {
         let isDoctor = doctor.walletAddress == caller;
-        let isHospitalOwner = Array.find<Hospital>(hospitals, func (h) : Bool { 
+        let isHospitalOwner = Array.find<Types.Hospital>(hospitals, func (h) : Bool { 
           h.id == doctor.hospitalId and h.walletAddress == caller 
         }) != null;
         
@@ -318,7 +257,7 @@ actor MedicalCanister {
         };
 
         scheduleCounter += 1;
-        let newSchedule : DoctorSchedule = {
+        let newSchedule : Types.DoctorSchedule = {
           id = scheduleCounter;
           doctorId = doctorId;
           dayOfWeek = dayOfWeek;
@@ -338,16 +277,16 @@ actor MedicalCanister {
     endTime: Text, 
     isAvailable: Bool
   ) : async Text {
-    let scheduleOpt = Array.find<DoctorSchedule>(doctorSchedules, func (s) : Bool { s.id == scheduleId });
+    let scheduleOpt = Array.find<Types.DoctorSchedule>(doctorSchedules, func (s) : Bool { s.id == scheduleId });
     switch (scheduleOpt) {
       case null return "Schedule not found";
       case (?schedule) {
-        let doctorOpt = Array.find<Doctor>(doctors, func (d) : Bool { d.id == schedule.doctorId });
+        let doctorOpt = Array.find<Types.Doctor>(doctors, func (d) : Bool { d.id == schedule.doctorId });
         switch (doctorOpt) {
           case null return "Doctor not found";
           case (?doctor) {
             let isDoctor = doctor.walletAddress == caller;
-            let isHospitalOwner = Array.find<Hospital>(hospitals, func (h) : Bool { 
+            let isHospitalOwner = Array.find<Types.Hospital>(hospitals, func (h) : Bool { 
               h.id == doctor.hospitalId and h.walletAddress == caller 
             }) != null;
             
@@ -355,7 +294,7 @@ actor MedicalCanister {
               return "Unauthorized: Only doctor or hospital owner can update schedule";
             };
 
-            doctorSchedules := Array.map<DoctorSchedule, DoctorSchedule>(doctorSchedules, func (s) : DoctorSchedule {
+            doctorSchedules := Array.map<Types.DoctorSchedule, Types.DoctorSchedule>(doctorSchedules, func (s) : Types.DoctorSchedule {
               if (s.id == scheduleId) {
                 { s with startTime = startTime; endTime = endTime; isAvailable = isAvailable }
               } else { s }
@@ -374,16 +313,16 @@ actor MedicalCanister {
     diagnosis: Text, 
     cpptURL: Text, 
     evidenceURLs: [Text],
-    prescriptions: [Prescription]
+    prescriptions: [Types.Prescription]
   ) : async Text {
-    let doctorOpt = Array.find<Doctor>(doctors, func (d) : Bool { 
+    let doctorOpt = Array.find<Types.Doctor>(doctors, func (d) : Bool { 
       d.walletAddress == caller and d.hospitalId == hospitalId and d.isActive 
     });
     switch (doctorOpt) {
       case null return "Unauthorized: You are not an active doctor in this hospital";
       case (?doctor) {
         recordCounter += 1;
-        let newRecord : MedicalRecord = {
+        let newRecord : Types.MedicalRecord = {
           id = recordCounter;
           patientId = patientId;
           doctorId = doctor.id;
@@ -401,19 +340,19 @@ actor MedicalCanister {
   };
 
   // NEW: Update prescriptions in existing medical record
-  public shared({caller}) func updatePrescriptions(recordId: Nat, prescriptions: [Prescription]) : async Text {
-    let recordOpt = Array.find<MedicalRecord>(medicalRecords, func (r) : Bool { r.id == recordId });
+  public shared({caller}) func updatePrescriptions(recordId: Nat, prescriptions: [Types.Prescription]) : async Text {
+    let recordOpt = Array.find<Types.MedicalRecord>(medicalRecords, func (r) : Bool { r.id == recordId });
     switch (recordOpt) {
       case null return "Medical record not found";
       case (?record) {
-        let doctorOpt = Array.find<Doctor>(doctors, func (d) : Bool { 
+        let doctorOpt = Array.find<Types.Doctor>(doctors, func (d) : Bool { 
           d.id == record.doctorId and d.walletAddress == caller 
         });
         if (doctorOpt == null) {
           return "Unauthorized: Only the attending doctor can update prescriptions";
         };
 
-        medicalRecords := Array.map<MedicalRecord, MedicalRecord>(medicalRecords, func (r) : MedicalRecord {
+        medicalRecords := Array.map<Types.MedicalRecord, Types.MedicalRecord>(medicalRecords, func (r) : Types.MedicalRecord {
           if (r.id == recordId) {
             { r with prescriptions = prescriptions }
           } else { r }
@@ -426,36 +365,36 @@ actor MedicalCanister {
   // Query functions
   
   // Hospital Query
-  public query func getHospitals() : async [Hospital] {
+  public query func getHospitals() : async [Types.Hospital] {
     hospitals;
   };
 
-  public query func getDoctors() : async [Doctor] {
+  public query func getDoctors() : async [Types.Doctor] {
     doctors;
   };
 
-  public query({caller}) func getHospitalsByPrincipal() : async [Hospital] { 
-    Array.filter<Hospital>(hospitals,func(h){h.walletAddress == caller});
+  public query({caller}) func getHospitalsByPrincipal() : async [Types.Hospital] { 
+    Array.filter<Types.Hospital>(hospitals,func(h){h.walletAddress == caller});
   };
 
-  public query({caller}) func getDoctorsByPrincipal() : async [Doctor] {
-    let hospitalsId = Array.map<Hospital,Nat>(
-      Array.filter<Hospital>(hospitals,func(h){h.walletAddress == caller}),
+  public query({caller}) func getDoctorsByPrincipal() : async [Types.Doctor] {
+    let hospitalsId = Array.map<Types.Hospital,Nat>(
+      Array.filter<Types.Hospital>(hospitals,func(h){h.walletAddress == caller}),
       func(h){h.id}
     ); //get all hospital according to principal and get only the ID
 
-    Array.filter<Doctor>(doctors,func(d){
+    Array.filter<Types.Doctor>(doctors,func(d){
       Array.find<Nat>(hospitalsId, func(hId){hId == d.hospitalId}) != null
     }) //get all the doctors according to hospital Id from the hospitalsId
   }; 
 
-  public query func getMedicalRecordsByPatient(patientId: Nat) : async [MedicalRecord] {
-    Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { r.patientId == patientId });
+  public query func getMedicalRecordsByPatient(patientId: Nat) : async [Types.MedicalRecord] {
+    Array.filter<Types.MedicalRecord>(medicalRecords, func (r) : Bool { r.patientId == patientId });
   };
 
   // New : Get medical record according to the hospitalID(support pagination)
-  public query func getMedicalRecordsByHospitalPaged(hospitalId: Nat, page: Nat, pageSize: Nat) : async [MedicalRecord] {
-    let filtered = Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { r.hospitalId == hospitalId });
+  public query func getMedicalRecordsByHospitalPaged(hospitalId: Nat, page: Nat, pageSize: Nat) : async [Types.MedicalRecord] {
+    let filtered = Array.filter<Types.MedicalRecord>(medicalRecords, func (r) : Bool { r.hospitalId == hospitalId });
     let start = page * pageSize;
     
     if (start >= Array.size(filtered)) {
@@ -465,22 +404,22 @@ actor MedicalCanister {
     let end = start + pageSize;
     let safeEnd = if (end > Array.size(filtered)) Array.size(filtered) else end;
 
-    return Array.subArray<MedicalRecord>(filtered, start, safeEnd);
+    return Array.subArray<Types.MedicalRecord>(filtered, start, safeEnd);
   };
 
   // NEW: Get doctor schedule
-  public query func getDoctorSchedule(doctorId: Nat) : async [DoctorSchedule] {
-    Array.filter<DoctorSchedule>(doctorSchedules, func (s) : Bool { s.doctorId == doctorId });
+  public query func getDoctorSchedule(doctorId: Nat) : async [Types.DoctorSchedule] {
+    Array.filter<Types.DoctorSchedule>(doctorSchedules, func (s) : Bool { s.doctorId == doctorId });
   };
 
   // NEW: Get available doctors by day and hospital
-  public query func getAvailableDoctors(hospitalId: Nat, dayOfWeek: Nat) : async [Doctor] {
-    let hospitalDoctors = Array.filter<Doctor>(doctors, func (d) : Bool { 
+  public query func getAvailableDoctors(hospitalId: Nat, dayOfWeek: Nat) : async [Types.Doctor] {
+    let hospitalDoctors = Array.filter<Types.Doctor>(doctors, func (d) : Bool { 
       d.hospitalId == hospitalId and d.isActive 
     });
     
-    Array.filter<Doctor>(hospitalDoctors, func (d) : Bool {
-      let schedules = Array.filter<DoctorSchedule>(doctorSchedules, func (s) : Bool {
+    Array.filter<Types.Doctor>(hospitalDoctors, func (d) : Bool {
+      let schedules = Array.filter<Types.DoctorSchedule>(doctorSchedules, func (s) : Bool {
         s.doctorId == d.id and s.dayOfWeek == dayOfWeek and s.isAvailable
       });
       Array.size(schedules) > 0
@@ -488,24 +427,24 @@ actor MedicalCanister {
   };
 
   // NEW: Get prescriptions by patient (from all medical records)
-  public query func getPrescriptionsByPatient(patientId: Nat) : async [(Nat, [Prescription])] {
-    let patientRecords = Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { 
+  public query func getPrescriptionsByPatient(patientId: Nat) : async [(Nat, [Types.Prescription])] {
+    let patientRecords = Array.filter<Types.MedicalRecord>(medicalRecords, func (r) : Bool { 
       r.patientId == patientId 
     });
     
-    Array.map<MedicalRecord, (Nat, [Prescription])>(patientRecords, func (r) : (Nat, [Prescription]) {
+    Array.map<Types.MedicalRecord, (Nat, [Types.Prescription])>(patientRecords, func (r) : (Nat, [Types.Prescription]) {
       (r.id, r.prescriptions)
     });
   };
 
   // NEW: Get doctor's patients count
   public query func getDoctorPatientsCount(doctorId: Nat) : async Nat {
-    let doctorRecords = Array.filter<MedicalRecord>(medicalRecords, func (r) : Bool { 
+    let doctorRecords = Array.filter<Types.MedicalRecord>(medicalRecords, func (r) : Bool { 
       r.doctorId == doctorId 
     });
     
     // Get unique patient IDs
-    let patientIds = Array.map<MedicalRecord, Nat>(doctorRecords, func (r) : Nat { r.patientId });
+    let patientIds = Array.map<Types.MedicalRecord, Nat>(doctorRecords, func (r) : Nat { r.patientId });
     // Note: This doesn't remove duplicates, but gives total records count
     Array.size(patientIds);
   };
