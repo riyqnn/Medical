@@ -12,32 +12,18 @@ Doctors gain instant access to complete patient histories, improving decision-ma
 By bridging technology with patient-centered care, Medly ensures improved healthcare outcomes while aligning with local health regulations.
 
 
-## ⚙️ Features :
-
-- 🏥 **Hospital & Doctor Management** – Register, manage, or deactivate hospitals and doctors  
-- 📋 **Medical Records** – Add and access patient records securely  
-- 🔎 **Data Retrieval** – View hospitals, doctors, and patient records easily
-
-
-## 🔄 How It Works
-
-- 🏥 **Hospital Registration** – Hospitals register with basic info and are managed by the owner’s wallet  
-- 👨‍⚕️ **Doctor Management** – Hospitals add or deactivate doctors tied to their institution  
-- 📋 **Medical Records** – Doctors add diagnoses and supporting data linked to patient ID  
-- 🔎 **Data Access** – Users can retrieve active hospitals, doctors, and patient-specific records  
-
-
 ## ✨ Project Insights
 
 - 📝 ** Pitch deck ** – [View File](#)  
-🎥 **Demo Video ** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)
+- 🎥 **Demo Video ** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)
 
 
 
 ## 🛠 Tech Stack
 
 - 🎨 **Frontend**: ReactJS (JavaScript)  
-- 🧠 **Canister Development**: Motoko  
+- 🧠 **Canister Development**: Motoko
+- 📦 **Storage**: IPFS Pinata
 - 🔐 **Authentication**: Internet Identity  
 - 💅 **Styling**: TailwindCSS  
 
