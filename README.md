@@ -7,8 +7,9 @@
 
 ## 🩺 Project Overview  
 
-**Medly** is a decentralized Electronic Medical Records (EMR) platform built on the **Internet Computer Protocol (ICP)** blockchain.  
-It simplifies and secures the healthcare data flow by enabling hospitals to onboard doctors and manage patient medical records in a **tamper-proof, interoperable, and patient-centered ecosystem**.
+**Medly** is a decentralized Electronic Medical Records (EMR) platform that replaces traditional paper charts with secure, blockchain-based storage. Around the world, many EMR systems remain isolated and centralized, making it difficult for healthcare providers to access complete patient histories across different hospitals or even across borders. This leads to slower treatment, higher risk of errors, and limited quality of care for patients.
+
+By leveraging the Internet Computer (ICP) blockchain, Medly creates a tamper-proof, interoperable ecosystem for medical data. Hospitals can securely share and verify patient records, doctors gain instant access to accurate histories, and patients have full ownership of their health information — ensuring transparency, speed, and trust in every step of care.
 
 ### 🎯 Mission
 To make healthcare data **secure, transparent, and universally accessible** while giving **patients control** over their records.
