@@ -1,63 +1,117 @@
 # 🌐 Medly: The Future of Secure Healthcare Records
 
----
-
-## 🩺 Overview :
-
-Electronic Medical Records (EMR) have revolutionized healthcare by replacing traditional paper-based systems with digital records. However, many EMR solutions today remain **fragmented, centralized, and lack interoperability**, making it difficult for healthcare providers to securely access complete patient data across different hospitals or regions.  
-
-This leads to:  
-- Delayed care coordination  
-- Higher risk of errors due to incomplete information  
-- Limited patient control over sensitive medical data  
-- Privacy and security concerns  
-
-**Medly** solves this by leveraging **Internet Computer (ICP)** blockchain to create a **decentralized, secure, and interoperable EMR ecosystem** where:  
-- **Hospitals** can register, onboard doctors, and manage records seamlessly.  
-- **Doctors** gain instant, permissioned access to complete patient histories.  
-- **Patients** maintain transparency and ownership over their healthcare data.  
-
-By combining **blockchain technology** with **patient-centered care**, Medly ensures improved healthcare outcomes, privacy, and regulatory compliance on a **global scale**.  
+[![Demo Video](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/Cy-rEW8Gtvo)
+[![Pitch Deck](https://img.shields.io/badge/Pitch-View%20Deck-blue?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=4JvdCAZJ4FI)
 
 ---
 
-## 🚀 Problem Statement  
+## 🩺 Project Overview  
 
-- **Centralization:** Single points of failure, prone to data breaches.  
-- **Lack of Interoperability:** EMR systems operate in silos.  
-- **Limited Patient Control:** Patients lack visibility over who accesses their data.  
-- **Security Concerns:** Medical data is highly sensitive yet often poorly protected.  
+**Medly** is a decentralized Electronic Medical Records (EMR) platform built on the **Internet Computer Protocol (ICP)** blockchain.  
+It simplifies and secures the healthcare data flow by enabling hospitals to onboard doctors and manage patient medical records in a **tamper-proof, interoperable, and patient-centered ecosystem**.
 
----
-
-## 💡 Solution Architecture  
-
-**Key Workflow:**  
-1. Hospital registers → Access to **Hospital Dashboard**  
-2. Hospital mints doctors → **Automatic Doctor Account Creation**  
-3. Doctor logs in → Access to **Doctor Dashboard**  
-4. Doctor uploads encrypted medical records → Stored on **IPFS** with hashes on **ICP blockchain**
+### 🎯 Mission
+To make healthcare data **secure, transparent, and universally accessible** while giving **patients control** over their records.
 
 ---
 
-## 📊 Flowchart  
+## 🚨 Problem  
 
-<img width="392" height="761" alt="image" src="https://github.com/user-attachments/assets/914ee9ae-b5fc-4e7a-9259-70a23c1a1205" />
-
+Current EMR systems suffer from:  
+- **Centralization risks** → Data breaches & downtime  
+- **Lack of interoperability** → Fragmented medical records  
+- **Limited patient control** → Patients can’t fully manage their data  
+- **Security vulnerabilities** → Sensitive medical data often unprotected  
 
 ---
 
-## ✨ Project Insights
+## 💡 Our Solution  
 
-- 📝 **Pitch deck** – [View File](https://www.youtube.com/watch?v=4JvdCAZJ4FI)  
-- 🎥 **Demo Video** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)
+Medly ensures:  
+- **Decentralized Architecture** → No single point of failure  
+- **Secure Record Management** → Encrypted data on IPFS, hashes on ICP blockchain  
+- **Easy Onboarding** → Hospitals register, mint doctors, doctors upload records  
+- **Patient Transparency** → Full access logs & control over permissions  
 
+---
 
+## 🏗️ Core Workflow  
 
-## 🛠 Tech Stack
+1. **Hospital Registration** → Hospital creates account & accesses Dashboard  
+2. **Mint Doctor** → Hospital generates Doctor accounts automatically  
+3. **Doctor Login** → Doctor logs in & accesses Doctor Dashboard  
+4. **Upload Records** → Doctors upload encrypted medical records  
+
+---
+
+## 📊 System Flowchart  
+
+<img width="300" alt="Medly System Flowchart" src="https://github.com/user-attachments/assets/914ee9ae-b5fc-4e7a-9259-70a23c1a1205" />
+
+---
+
+## 🛠 Tech Stack  
 
 - 🎨 **Frontend**: ReactJS (JavaScript)  
-- 🧠 **Canister Development**: Motoko
-- 📦 **Storage**: IPFS Pinata
+- 🧠 **Canister Development**: Motoko  
+- 📦 **Storage**: IPFS (Pinata)  
 - 🔐 **Authentication**: Internet Identity  
 - 💅 **Styling**: TailwindCSS  
+
+---
+
+## 🚀 Key Features  
+
+- 🏥 **Hospital Dashboard**: Register & onboard doctors  
+- 👨‍⚕️ **Doctor Dashboard**: Upload patient records securely  
+- 🔐 **Decentralized Storage**: IPFS + ICP Blockchain  
+- 📜 **Access Logs**: Patients maintain visibility and control  
+- 🌐 **Interoperable System**: Works across multiple providers  
+
+---
+
+## ✨ Demo & Resources  
+
+- 📝 **Pitch Deck** – [View File](https://www.youtube.com/watch?v=4JvdCAZJ4FI)  
+- 🎥 **Demo Video** – [Watch Video](https://youtu.be/Cy-rEW8Gtvo)  
+
+---
+
+## 🏁 Getting Started  
+
+### Prerequisites  
+
+```bash
+# Install DFX SDK
+sh -ci "$(curl -fsSL https://smartcontracts.org/install.sh)"
+
+# Install dependencies
+npm install
+```
+
+### Run Locally
+
+```bash
+# Start local ICP replica
+dfx start --background
+
+# Deploy canisters
+dfx deploy
+
+# Start frontend
+npm start
+```
+
+## 👥 Team
+
+- [**@amzy_co**](https://instagram.com/amzy_co) – Product Manager  
+- [**@_d.dzakky**](https://instagram.com/_d.dzakky) – Frontend Developer  
+- [**@farros.mufid**](https://instagram.com/farros.mufid) – Frontend Developer  
+- [**@mieayamjava**](https://instagram.com/mieayamjava) – Smart Contract Developer  
+
+
+## 📄 License  
+
+This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.  
+
+Copyright (c) 2025 Medly  
