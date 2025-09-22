@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🌐 Medly: The Future of Secure Healthcare Records in Indonesia
 
 ---
@@ -41,6 +40,7 @@ By bridging technology with patient-centered care, Medly ensures improved health
 - 🧠 **Canister Development**: Motoko  
 - 🔐 **Authentication**: Internet Identity  
 - 💅 **Styling**: TailwindCSS  
+
 
 =======
 # 🌐 Medly: The Future of Secure Healthcare Records
@@ -161,4 +161,3 @@ npm start
 This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.  
 
 Copyright (c) 2025 Medly  
->>>>>>> cbdd522772d1eeaa622aebf1639dae7067bd6208
